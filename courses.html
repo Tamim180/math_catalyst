@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Math Catalyst — Courses</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #050814;
+  color: white;
+  min-height: 100vh;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 40px;
+  background: rgba(5, 8, 20, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(34,211,238,0.1);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(34,211,238,0.3));
+}
+
+.nav-logo-text { line-height: 1.1; }
+.nav-logo-text .the { font-size: 9px; letter-spacing: 3px; color: #f59e0b; text-transform: uppercase; }
+.nav-logo-text .main { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+.nav-logo-text .cat { font-size: 10px; letter-spacing: 3px; color: #22d3ee; text-transform: uppercase; }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-user {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.nav-user span { color: #22d3ee; font-weight: 600; }
+
+.nav-btn {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(34,211,238,0.3);
+  background: rgba(34,211,238,0.06);
+  color: #22d3ee;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-btn:hover { background: rgba(34,211,238,0.12); }
+
+/* ── MAIN ── */
+main {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.page-header {
+  margin-bottom: 40px;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.page-header h1 span { color: #22d3ee; }
+
+.page-header p {
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* ── FILTER TABS ── */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 7px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(34,211,238,0.2);
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover { color: #94a3b8; border-color: rgba(34,211,238,0.35); }
+.filter-btn.active { background: rgba(34,211,238,0.1); color: #22d3ee; border-color: rgba(34,211,238,0.4); }
+
+/* ── COURSE GRID ── */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.course-card {
+  border-radius: 16px;
+  border: 1px solid rgba(34,211,238,0.12);
+  background: rgba(10, 15, 35, 0.7);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.course-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(34,211,238,0.3);
+  box-shadow: 0 8px 32px rgba(34,211,238,0.08);
+}
+
+.card-thumb {
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.card-thumb .thumb-label {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.15);
+}
+
+.card-body { padding: 18px 20px 20px; }
+
+.card-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tag-secondary { background: rgba(129,140,248,0.12); color: #818cf8; border: 1px solid rgba(129,140,248,0.2); }
+.tag-hsc { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+.tag-ssc { background: rgba(34,211,238,0.08); color: #22d3ee; border: 1px solid rgba(34,211,238,0.2); }
+
+.card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.meta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22d3ee;
+  opacity: 0.5;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid rgba(34,211,238,0.08);
+}
+
+.price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.price .currency { font-size: 13px; font-weight: 600; margin-right: 1px; }
+.price .tbd { font-size: 14px; color: #475569; font-weight: 500; }
+
+.enroll-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: linear-gradient(135deg, #22d3ee, #0891b2);
+  color: #050814;
+}
+
+.enroll-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(34,211,238,0.3); }
+
+.enroll-btn.owned {
+  background: rgba(52,211,153,0.1);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,0.3);
+}
+
+/* ── EMPTY STATE ── */
+.empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 60px 0;
+  color: #334155;
+  font-size: 15px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  nav { padding: 12px 20px; }
+  main { padding: 32px 16px 60px; }
+  .page-header h1 { font-size: 24px; }
+  .nav-user { display: none; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="index.html">
+    <img src="logo.png" alt="logo" />
+    <div class="nav-logo-text">
+      <div class="the">The</div>
+      <div class="main">MATH</div>
+      <div class="cat">Catalyst</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <div class="nav-user">Hi, <span id="nav-name">Student</span></div>
+    <button class="nav-btn" onclick="location.href='index.html'">Sign out</button>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>All <span>Courses</span></h1>
+    <p>Buy once, keep forever. Pick the course that matches your class.</p>
+  </div>
+
+  <div class="filter-row" id="filter-row"></div>
+  <div class="course-grid" id="course-grid"></div>
+</main>
+
+<script>
+/* ============================================================
+   COURSES DATA — edit this array to add / remove / change courses
+   Fields:
+     title      — course name shown on card
+     tag        — label shown as badge  
+     tagClass   — CSS class for badge color: tag-ssc | tag-hsc | tag-secondary
+     desc       — short description
+     chapters   — number of chapters
+     videos     — total video count
+     price      — number (taka), or null for "TBD"
+     accentFrom — gradient start color for thumbnail
+     accentTo   — gradient end color for thumbnail
+     owned      — true if student already bought it (will come from backend later)
+============================================================ */
+const courses = [
+  {
+    title: "Class 9 Math",
+    tag: "SSC",
+    tagClass: "tag-ssc",
+    desc: "Full syllabus coverage for Class 9. Algebra, geometry, trigonometry and more.",
+    chapters: 12,
+    videos: 48,
+    price: null,
+    accentFrom: "#0a2a3a",
+    accentTo: "#050814",
+    owned: false
+  },
+  {
+    title: "Class 10 Math",
+    tag: "SSC",
+    tagClass: "tag-ssc",
+    desc: "Complete Class 10 math preparation. Focused on board exam patterns.",
+    chapters: 14,
+    videos: 56,
+    price: null,
+    accentFrom: "#0a2a3a",
+    accentTo: "#050814",
+    owned: false
+  },
+  {
+    title: "HSC 1st Year Math",
+    tag: "HSC",
+    tagClass: "tag-hsc",
+    desc: "Higher math for HSC 1st year. Calculus, vectors, complex numbers.",
+    chapters: 10,
+    videos: 42,
+    price: null,
+    accentFrom: "#2a1a05",
+    accentTo: "#050814",
+    owned: false
+  },
+  {
+    title: "HSC 2nd Year Math",
+    tag: "HSC",
+    tagClass: "tag-hsc",
+    desc: "Final year HSC math. Statistics, mechanics, and full board preparation.",
+    chapters: 11,
+    videos: 46,
+    price: null,
+    accentFrom: "#2a1a05",
+    accentTo: "#050814",
+    owned: false
+  }
+];
+
+/* ── filters derived from data ── */
+const allTags = ['All', ...new Set(courses.map(c => c.tag))];
+let activeFilter = 'All';
+
+function renderFilters() {
+  const row = document.getElementById('filter-row');
+  row.innerHTML = allTags.map(tag => `
+    <button class="filter-btn ${tag === activeFilter ? 'active' : ''}"
+      onclick="setFilter('${tag}')">${tag}</button>
+  `).join('');
+}
+
+function setFilter(tag) {
+  activeFilter = tag;
+  renderFilters();
+  renderCourses();
+}
+
+function renderCourses() {
+  const filtered = activeFilter === 'All' ? courses : courses.filter(c => c.tag === activeFilter);
+  const grid = document.getElementById('course-grid');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty">No courses found.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((c, i) => `
+    <div class="course-card" onclick="openCourse(${courses.indexOf(c)})">
+      <div class="card-thumb" style="background: linear-gradient(135deg, ${c.accentFrom}, ${c.accentTo})">
+        <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+          ${thumbSVG(c)}
+        </svg>
+        <span class="thumb-label">${c.tag}</span>
+      </div>
+      <div class="card-body">
+        <span class="card-tag ${c.tagClass}">${c.tag}</span>
+        <div class="card-title">${c.title}</div>
+        <div class="card-desc">${c.desc}</div>
+        <div class="card-meta">
+          <div class="meta-item"><div class="meta-dot"></div>${c.chapters} chapters</div>
+          <div class="meta-item"><div class="meta-dot"></div>${c.videos} videos</div>
+        </div>
+        <div class="card-footer">
+          <div class="price">
+            ${c.price ? `<span class="currency">৳</span>${c.price}` : '<span class="tbd">Price TBD</span>'}
+          </div>
+          <button class="enroll-btn ${c.owned ? 'owned' : ''}" onclick="event.stopPropagation(); enrollClick(${courses.indexOf(c)})">
+            ${c.owned ? '✓ Enrolled' : 'Enroll now'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function thumbSVG(c) {
+  const isHSC = c.tag === 'HSC';
+  const col = isHSC ? '#f59e0b' : '#22d3ee';
+  const formulas = isHSC
+    ? ['∫f(x)dx', 'lim x→∞', 'd/dx', 'Σaₙ']
+    : ['ax²+bx', 'sin θ', '√x²+y²', 'log n'];
+  return `
+    <circle cx="150" cy="65" r="50" fill="none" stroke="${col}" stroke-width="0.4" stroke-opacity="0.2" stroke-dasharray="4 6"/>
+    <circle cx="150" cy="65" r="30" fill="none" stroke="${col}" stroke-width="0.4" stroke-opacity="0.15" stroke-dasharray="3 5"/>
+    <text x="150" y="72" text-anchor="middle" font-size="28" font-weight="900" fill="${col}" opacity="0.18" font-family="monospace">${isHSC ? '∫' : 'x²'}</text>
+    ${formulas.map((f, i) => {
+      const angles = [30, 140, 210, 320];
+      const rad = angles[i] * Math.PI / 180;
+      const r = 46;
+      const fx = 150 + r * Math.cos(rad);
+      const fy = 65 + r * Math.sin(rad);
+      return `<text x="${fx}" y="${fy}" text-anchor="middle" font-size="9" fill="${col}" opacity="0.35" font-family="monospace">${f}</text>`;
+    }).join('')}
+  `;
+}
+
+function openCourse(idx) {
+  // will navigate to course page — placeholder for now
+  alert(`Opening: ${courses[idx].title}\n(Course detail page coming next!)`);
+}
+
+function enrollClick(idx) {
+  if (courses[idx].owned) return;
+  // will navigate to purchase page
+  alert(`Enroll in: ${courses[idx].title}\n(Purchase page coming next!)`);
+}
+
+renderFilters();
+renderCourses();
+
+/* ── ambient particle background (same system as login) ── */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let w, h;
+function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+let mouse = { x: w / 2, y: h / 2 };
+let ripples = [];
+let t = 0;
+
+// mouse
+document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+document.addEventListener('click', e => {
+  for (let i = 0; i < 3; i++) ripples.push({ x: e.clientX, y: e.clientY, r: i * 15, speed: 1.8 + i * 0.4 });
+});
+// touch
+document.addEventListener('touchmove', e => {
+  const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY;
+}, { passive: true });
+document.addEventListener('touchstart', e => {
+  const touch = e.touches[0]; mouse.x = touch.clientX; mouse.y = touch.clientY;
+  for (let i = 0; i < 3; i++) ripples.push({ x: touch.clientX, y: touch.clientY, r: i * 15, speed: 1.8 + i * 0.4 });
+}, { passive: true });
+
+function draw() {
+  ctx.fillStyle = 'rgba(5, 8, 20, 0.13)';
+  ctx.fillRect(0, 0, w, h);
+  t += 0.003;
+  const step = 28;
+  for (let y = 0; y < h; y += step) {
+    for (let x = 0; x < w; x += step) {
+      const dx = x - mouse.x, dy = y - mouse.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const wave = Math.sin(dist * 0.018 - t * 5);
+      const influence = Math.max(0, 1 - dist / 380);
+      let ox = Math.sin(t + y * 0.009) * 7;
+      let oy = Math.cos(t + x * 0.009) * 7;
+      for (const r of ripples) {
+        const rx = x - r.x, ry = y - r.y;
+        const d = Math.sqrt(rx*rx + ry*ry);
+        const rWave = Math.sin(d * 0.045 - r.r * 0.18);
+        const rForce = Math.max(0, 1 - d / 280);
+        ox += rWave * rForce * 10; oy += rWave * rForce * 10;
+      }
+      const cx_ratio = x / w;
+      const r_val = Math.round(34 + cx_ratio * (245 - 34));
+      const g_val = Math.round(211 + cx_ratio * (158 - 211));
+      const b_val = Math.round(238 + cx_ratio * (11 - 238));
+      const alpha = 0.03 + wave * 0.04 + influence * 0.12;
+      ctx.fillStyle = `rgba(${r_val},${g_val},${b_val},${alpha})`;
+      ctx.fillRect(x + ox + wave * 9, y + oy + wave * 9, 2, 2);
+    }
+  }
+  ripples.forEach(r => r.r += r.speed);
+  ripples = ripples.filter(r => r.r < 140);
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
