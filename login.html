@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Math Catalyst</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #050814;
+  color: white;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.page {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── HERO ── */
+.hero {
+  flex: 1.3;
+  padding: 36px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-wrap img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(34,211,238,0.4));
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.logo-text .the { font-size: 11px; letter-spacing: 3px; color: #f59e0b; text-transform: uppercase; }
+.logo-text .main { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: #fff; }
+.logo-text .catalyst { font-size: 13px; letter-spacing: 4px; color: #22d3ee; text-transform: uppercase; }
+
+.hero-mid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+/* space illustration */
+.space-scene {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 32px;
+}
+
+.hero-copy h1 {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(34,211,238,0.2);
+  margin-bottom: 12px;
+}
+
+.hero-copy h1 span.accent { color: #22d3ee; }
+.hero-copy h1 span.orange { color: #f59e0b; }
+
+.hero-copy p {
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 380px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(34,211,238,0.25);
+  color: #67e8f9;
+  background: rgba(34,211,238,0.06);
+}
+
+.tagline {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(245,158,11,0.6);
+  text-transform: uppercase;
+}
+
+/* ── AUTH PANEL ── */
+.auth {
+  flex: 0 0 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 370px;
+  padding: 32px 28px;
+  border-radius: 20px;
+  background: rgba(10, 15, 35, 0.75);
+  border: 1px solid rgba(34,211,238,0.2);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 60px rgba(34,211,238,0.07), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.tab-row {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(34,211,238,0.15);
+}
+
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.tab-btn.active {
+  color: #22d3ee;
+  border-bottom-color: #22d3ee;
+}
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.field { margin-bottom: 16px; }
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(51,65,85,0.8);
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field input::placeholder { color: #334155; }
+
+.field input:focus {
+  border-color: rgba(34,211,238,0.5);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.08);
+}
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.forgot {
+  text-align: right;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  margin-top: -8px;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+.forgot:hover { color: #22d3ee; }
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+  background: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
+  color: #050814;
+  box-shadow: 0 4px 24px rgba(34,211,238,0.25);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 32px rgba(34,211,238,0.35);
+}
+
+.btn:active { transform: translateY(0); }
+
+.switch-text {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #475569;
+}
+
+.switch-text span {
+  color: #22d3ee;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.switch-text span:hover { text-decoration: underline; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(34,211,238,0.1);
+}
+
+.divider span { font-size: 11px; color: #334155; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .page { flex-direction: column; }
+  .hero { padding: 28px 24px 20px; flex: none; }
+  .hero-mid { padding: 20px 0; }
+  .hero-copy h1 { font-size: 26px; }
+  .space-scene { max-width: 280px; }
+  .auth { flex: none; padding: 0 24px 40px; }
+  .card { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="The Math Catalyst logo" />
+      <div class="logo-text">
+        <span class="the">The</span>
+        <span class="main">MATH</span>
+        <span class="catalyst">Catalyst</span>
+      </div>
+    </div>
+
+    <div class="hero-mid">
+      <!-- Abstract math/space SVG illustration -->
+      <svg class="space-scene" viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- ambient glow blobs -->
+        <ellipse cx="140" cy="110" rx="100" ry="80" fill="url(#glow1)"/>
+        <ellipse cx="300" cy="90" rx="80" ry="70" fill="url(#glow2)"/>
+
+        <!-- orbit rings -->
+        <ellipse cx="200" cy="110" rx="160" ry="55" fill="none" stroke="#22d3ee" stroke-width="0.5" stroke-opacity="0.2" stroke-dasharray="4 6"/>
+        <ellipse cx="200" cy="110" rx="110" ry="38" fill="none" stroke="#f59e0b" stroke-width="0.5" stroke-opacity="0.2" stroke-dasharray="3 5"/>
+
+        <!-- stars -->
+        <circle cx="30" cy="20" r="1.5" fill="#fff" opacity="0.7"/>
+        <circle cx="80" cy="8" r="1" fill="#fff" opacity="0.5"/>
+        <circle cx="150" cy="15" r="1.2" fill="#22d3ee" opacity="0.8"/>
+        <circle cx="250" cy="5" r="1.5" fill="#fff" opacity="0.6"/>
+        <circle cx="340" cy="18" r="1" fill="#fff" opacity="0.4"/>
+        <circle cx="400" cy="30" r="1.3" fill="#f59e0b" opacity="0.7"/>
+        <circle cx="380" cy="180" r="1" fill="#fff" opacity="0.5"/>
+        <circle cx="50" cy="190" r="1.2" fill="#22d3ee" opacity="0.6"/>
+        <circle cx="10" cy="140" r="1" fill="#fff" opacity="0.4"/>
+        <circle cx="410" cy="120" r="1.5" fill="#fff" opacity="0.5"/>
+
+        <!-- central glowing planet -->
+        <circle cx="200" cy="110" r="28" fill="#0a1628" stroke="#22d3ee" stroke-width="1" stroke-opacity="0.5"/>
+        <circle cx="200" cy="110" r="28" fill="none" stroke="#22d3ee" stroke-width="8" stroke-opacity="0.06"/>
+        <!-- M symbol inside planet -->
+        <text x="200" y="118" text-anchor="middle" font-size="26" font-weight="900" fill="#22d3ee" opacity="0.9" font-family="system-ui">M</text>
+
+        <!-- orbiting formula nodes -->
+        <!-- node 1: top right on outer orbit -->
+        <circle cx="348" cy="75" r="18" fill="#0a1628" stroke="#f59e0b" stroke-width="0.8" stroke-opacity="0.6"/>
+        <text x="348" y="80" text-anchor="middle" font-size="11" fill="#f59e0b" opacity="0.9" font-family="monospace">x²</text>
+
+        <!-- node 2: bottom left on outer orbit -->
+        <circle cx="52" cy="145" r="18" fill="#0a1628" stroke="#22d3ee" stroke-width="0.8" stroke-opacity="0.6"/>
+        <text x="52" y="150" text-anchor="middle" font-size="9" fill="#22d3ee" opacity="0.9" font-family="monospace">∫dx</text>
+
+        <!-- node 3: inner orbit right -->
+        <circle cx="302" cy="120" r="14" fill="#0a1628" stroke="#818cf8" stroke-width="0.8" stroke-opacity="0.6"/>
+        <text x="302" y="125" text-anchor="middle" font-size="10" fill="#818cf8" opacity="0.9" font-family="monospace">π</text>
+
+        <!-- node 4: inner orbit left -->
+        <circle cx="100" cy="100" r="14" fill="#0a1628" stroke="#34d399" stroke-width="0.8" stroke-opacity="0.6"/>
+        <text x="100" y="105" text-anchor="middle" font-size="9" fill="#34d399" opacity="0.9" font-family="monospace">√x</text>
+
+        <!-- floating formula text -->
+        <text x="310" y="30" font-size="11" fill="#22d3ee" opacity="0.35" font-family="monospace">e^(iπ)+1=0</text>
+        <text x="20" y="60" font-size="10" fill="#f59e0b" opacity="0.3" font-family="monospace">ax²+bx+c=0</text>
+        <text x="290" y="200" font-size="10" fill="#818cf8" opacity="0.3" font-family="monospace">Σ(1/n²)=π²/6</text>
+        <text x="30" y="215" font-size="10" fill="#34d399" opacity="0.3" font-family="monospace">sin²θ+cos²θ=1</text>
+
+        <!-- connector lines from planet to nodes -->
+        <line x1="224" y1="96" x2="334" y2="78" stroke="#f59e0b" stroke-width="0.4" stroke-opacity="0.2" stroke-dasharray="3 4"/>
+        <line x1="176" y1="124" x2="68" y2="142" stroke="#22d3ee" stroke-width="0.4" stroke-opacity="0.2" stroke-dasharray="3 4"/>
+        <line x1="228" y1="108" x2="288" y2="116" stroke="#818cf8" stroke-width="0.4" stroke-opacity="0.2" stroke-dasharray="3 4"/>
+        <line x1="172" y1="108" x2="114" y2="103" stroke="#34d399" stroke-width="0.4" stroke-opacity="0.2" stroke-dasharray="3 4"/>
+      </svg>
+
+      <div class="hero-copy">
+        <h1>Ignite <span class="accent">thinking.</span><br>Solve <span class="orange">anything.</span></h1>
+        <p>Structured math lessons for Class 9, 10 & HSC. Buy a course once, keep it forever.</p>
+        <div class="pills">
+          <span class="pill">Class 9 Math</span>
+          <span class="pill">Class 10 Math</span>
+          <span class="pill">HSC Math</span>
+          <span class="pill">Permanent access</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tagline">Ignite thinking. Solve anything.</div>
+  </div>
+
+  <!-- AUTH -->
+  <div class="auth">
+    <div class="card">
+
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('login', this)">Sign in</button>
+        <button class="tab-btn" onclick="switchTab('register', this)">Register</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="panel active" id="p-login">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" placeholder="your@email.com" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <div class="forgot">Forgot password?</div>
+        <button class="btn">Sign in</button>
+        <div class="switch-text">Don't have an account? <span onclick="switchTab('register', document.querySelectorAll('.tab-btn')[1])">Register</span></div>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="panel" id="p-register">
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" placeholder="Your full name" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" placeholder="your@email.com" />
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>School / College</label>
+            <input type="text" placeholder="Institution" />
+          </div>
+          <div class="field">
+            <label>Class</label>
+            <input type="text" placeholder="e.g. 10" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <div class="field">
+          <label>Confirm password</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn">Create account</button>
+        <div class="switch-text">Already have an account? <span onclick="switchTab('login', document.querySelectorAll('.tab-btn')[0])">Sign in</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(panel, tabEl) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById('p-' + panel).classList.add('active');
+  tabEl.classList.add('active');
+}
+
+/* ===== ENHANCED RIPPLE SYSTEM ===== */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let w, h;
+
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let mouse = { x: w / 2, y: h / 2 };
+let ripples = [];
+let t = 0;
+
+// mouse — desktop
+document.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+document.addEventListener('click', e => {
+  for (let i = 0; i < 3; i++) {
+    ripples.push({ x: e.clientX, y: e.clientY, r: i * 15, speed: 1.8 + i * 0.4 });
+  }
+});
+
+// touch — mobile: follow finger + ripple on tap
+document.addEventListener('touchmove', e => {
+  const touch = e.touches[0];
+  mouse.x = touch.clientX;
+  mouse.y = touch.clientY;
+}, { passive: true });
+
+document.addEventListener('touchstart', e => {
+  const touch = e.touches[0];
+  mouse.x = touch.clientX;
+  mouse.y = touch.clientY;
+  for (let i = 0; i < 3; i++) {
+    ripples.push({ x: touch.clientX, y: touch.clientY, r: i * 15, speed: 1.8 + i * 0.4 });
+  }
+}, { passive: true });
+
+function draw() {
+  ctx.fillStyle = 'rgba(5, 8, 20, 0.13)';
+  ctx.fillRect(0, 0, w, h);
+
+  t += 0.003;
+  const step = 24;
+
+  for (let y = 0; y < h; y += step) {
+    for (let x = 0; x < w; x += step) {
+      const dx = x - mouse.x;
+      const dy = y - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const wave = Math.sin(dist * 0.018 - t * 5);
+      const influence = Math.max(0, 1 - dist / 380);
+
+      let ox = Math.sin(t + y * 0.009) * 7;
+      let oy = Math.cos(t + x * 0.009) * 7;
+
+      for (const r of ripples) {
+        const rx = x - r.x, ry = y - r.y;
+        const d = Math.sqrt(rx * rx + ry * ry);
+        const rWave = Math.sin(d * 0.045 - r.r * 0.18);
+        const rForce = Math.max(0, 1 - d / 280);
+        ox += rWave * rForce * 10;
+        oy += rWave * rForce * 10;
+      }
+
+      // blend cyan and orange based on x position
+      const cx_ratio = x / w;
+      const r_val = Math.round(34 + cx_ratio * (245 - 34));
+      const g_val = Math.round(211 + cx_ratio * (158 - 211));
+      const b_val = Math.round(238 + cx_ratio * (11 - 238));
+
+      const alpha = 0.04 + wave * 0.05 + influence * 0.18;
+
+      ctx.fillStyle = `rgba(${r_val},${g_val},${b_val},${alpha})`;
+      ctx.fillRect(x + ox + wave * 9, y + oy + wave * 9, 2, 2);
+    }
+  }
+
+  ripples.forEach(r => r.r += r.speed);
+  ripples = ripples.filter(r => r.r < 140);
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
