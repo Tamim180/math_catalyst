@@ -380,6 +380,78 @@ tr:hover td { background: rgba(34,211,238,0.02); }
 }
 .btn-cancel:hover { border-color: rgba(34,211,238,0.2); color: #fff; }
 
+/* ── VIDEO / CHAPTER EDITOR ── */
+.chapter-box {
+  border-radius: 12px;
+  border: 1px solid rgba(34,211,238,0.12);
+  background: rgba(5,8,20,0.5);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.chapter-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+}
+.chapter-head input {
+  flex: 1; padding: 8px 10px;
+  border-radius: 8px; border: 1px solid rgba(51,65,85,0.8);
+  background: rgba(15,23,42,0.9); color: #e2e8f0;
+  font-size: 13px; font-weight: 700; outline: none;
+}
+.chapter-head input:focus { border-color: rgba(34,211,238,0.4); }
+
+.video-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 60px auto;
+  gap: 6px; align-items: center;
+  margin-bottom: 8px;
+}
+.video-edit-row input[type="text"] {
+  padding: 7px 9px; border-radius: 7px;
+  border: 1px solid rgba(51,65,85,0.8);
+  background: rgba(15,23,42,0.9); color: #e2e8f0;
+  font-size: 12px; outline: none; width: 100%;
+}
+.video-edit-row input[type="text"]:focus { border-color: rgba(34,211,238,0.4); }
+.video-yt-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px; margin-bottom: 10px; padding-left: 2px;
+}
+.video-yt-row input {
+  padding: 6px 9px; border-radius: 7px;
+  border: 1px solid rgba(34,211,238,0.15);
+  background: rgba(15,23,42,0.7); color: #67e8f9;
+  font-size: 11px; font-family: monospace; outline: none;
+}
+.video-yt-row input::placeholder { color: #334155; font-family: system-ui, sans-serif; }
+.video-yt-row input:focus { border-color: rgba(34,211,238,0.4); }
+.free-check {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #64748b; white-space: nowrap;
+}
+.free-check input { accent-color: #22d3ee; }
+.btn-x {
+  width: 26px; height: 26px; border-radius: 6px;
+  border: 1px solid rgba(239,68,68,0.2);
+  background: rgba(239,68,68,0.08); color: #f87171;
+  font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+.btn-x:hover { background: rgba(239,68,68,0.18); }
+.btn-add-video {
+  width: 100%; padding: 7px; margin-top: 4px;
+  border-radius: 7px; border: 1px dashed rgba(34,211,238,0.25);
+  background: transparent; color: #22d3ee;
+  font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+.btn-add-video:hover { background: rgba(34,211,238,0.06); }
+.chapter-foot {
+  display: flex; justify-content: flex-end; margin-top: 8px;
+}
+.video-count-tag {
+  font-size: 10px; color: #334155; margin-left: auto; margin-right: 8px;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .admin-wrap { grid-template-columns: 1fr; }
@@ -585,6 +657,24 @@ tr:hover td { background: rgba(34,211,238,0.02); }
   </div>
 </div>
 
+<!-- ── VIDEO MANAGER MODAL ── -->
+<div class="modal-overlay" id="video-modal" onclick="closeModalOuter(event,'video-modal')">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-head">
+      <h3 id="video-modal-title">Manage Videos</h3>
+      <button class="modal-close" onclick="closeModal('video-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="video-modal-body" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn-sm" onclick="addChapter()">+ Add chapter</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn-cancel" onclick="closeModal('video-modal')">Cancel</button>
+        <button class="btn-primary" onclick="saveVideoManager()">Save videos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── REQUEST DETAIL MODAL ── -->
 <div class="modal-overlay" id="req-modal" onclick="closeModalOuter(event,'req-modal')">
   <div class="modal-box">
@@ -639,6 +729,135 @@ let students = [
 ];
 
 let nextCourseId = 10;
+
+/* ══════════════════════════════════════════════════
+   CHAPTERS / VIDEOS DATA
+   Mirrors the `courseData[i].chapters` array in course.html.
+   Keyed by course id. Edits made here are saved to
+   localStorage under 'mc_chapters_override' and course.html
+   reads that override on load, so changes show up live
+   (same browser / same site once hosted — file:// double-click
+   pages can have separate storage per file in some browsers).
+   SUPABASE TODO: replace with `chapters` + `videos` tables,
+   each video row has a youtube_id column.
+═══════════════════════════════════════════════════ */
+const defaultChapters = {
+  0: [
+    { name: "Real Numbers & Surds", videos: [
+      { title: "Introduction to Real Numbers", duration: "12:30", free: true, youtubeId: "" },
+      { title: "Rational vs Irrational Numbers", duration: "15:45", free: true, youtubeId: "" },
+      { title: "Surds — Simplification", duration: "18:20", free: false, youtubeId: "" },
+      { title: "Operations on Surds", duration: "22:10", free: false, youtubeId: "" },
+    ]},
+    { name: "Algebraic Expressions", videos: [
+      { title: "Polynomials — Basics", duration: "14:00", free: true, youtubeId: "" },
+      { title: "Factorisation Techniques", duration: "20:15", free: false, youtubeId: "" },
+      { title: "Algebraic Identities", duration: "17:40", free: false, youtubeId: "" },
+      { title: "Remainder & Factor Theorem", duration: "25:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Linear Equations", videos: [
+      { title: "Solving One-Variable Equations", duration: "13:20", free: true, youtubeId: "" },
+      { title: "Simultaneous Equations", duration: "19:50", free: false, youtubeId: "" },
+      { title: "Word Problems", duration: "21:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Geometry — Triangles", videos: [
+      { title: "Triangle Congruence", duration: "16:30", free: false, youtubeId: "" },
+      { title: "Triangle Similarity", duration: "18:45", free: false, youtubeId: "" },
+      { title: "Pythagoras Theorem", duration: "20:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Trigonometry", videos: [
+      { title: "Intro to Trigonometric Ratios", duration: "14:55", free: true, youtubeId: "" },
+      { title: "sin, cos, tan — Values", duration: "17:20", free: false, youtubeId: "" },
+      { title: "Trigonometric Identities", duration: "22:30", free: false, youtubeId: "" },
+      { title: "Height & Distance Problems", duration: "26:00", free: false, youtubeId: "" },
+    ]},
+  ],
+  1: [
+    { name: "Quadratic Equations", videos: [
+      { title: "Introduction to Quadratics", duration: "13:00", free: true, youtubeId: "" },
+      { title: "Factorisation Method", duration: "16:40", free: true, youtubeId: "" },
+      { title: "Quadratic Formula", duration: "19:20", free: false, youtubeId: "" },
+      { title: "Nature of Roots", duration: "18:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Arithmetic Progression", videos: [
+      { title: "AP — Introduction", duration: "12:10", free: true, youtubeId: "" },
+      { title: "nth Term Formula", duration: "15:30", free: false, youtubeId: "" },
+      { title: "Sum of n Terms", duration: "20:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Coordinate Geometry", videos: [
+      { title: "Distance Formula", duration: "14:20", free: true, youtubeId: "" },
+      { title: "Section Formula", duration: "17:00", free: false, youtubeId: "" },
+      { title: "Area of Triangle", duration: "16:45", free: false, youtubeId: "" },
+    ]},
+    { name: "Circles", videos: [
+      { title: "Tangent to a Circle", duration: "18:30", free: false, youtubeId: "" },
+      { title: "Chord Properties", duration: "20:15", free: false, youtubeId: "" },
+      { title: "Cyclic Quadrilateral", duration: "22:00", free: false, youtubeId: "" },
+    ]},
+  ],
+  2: [
+    { name: "Complex Numbers", videos: [
+      { title: "Introduction to Complex Numbers", duration: "15:00", free: true, youtubeId: "" },
+      { title: "Argand Plane", duration: "18:20", free: true, youtubeId: "" },
+      { title: "Modulus & Argument", duration: "20:40", free: false, youtubeId: "" },
+      { title: "De Moivre's Theorem", duration: "24:10", free: false, youtubeId: "" },
+    ]},
+    { name: "Matrices & Determinants", videos: [
+      { title: "Matrix Operations", duration: "16:30", free: true, youtubeId: "" },
+      { title: "Determinants", duration: "19:00", free: false, youtubeId: "" },
+      { title: "Inverse of a Matrix", duration: "22:15", free: false, youtubeId: "" },
+      { title: "Cramer's Rule", duration: "25:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Vectors", videos: [
+      { title: "Vector Basics", duration: "14:00", free: true, youtubeId: "" },
+      { title: "Dot Product", duration: "17:30", free: false, youtubeId: "" },
+      { title: "Cross Product", duration: "20:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Differential Calculus", videos: [
+      { title: "Limits — Introduction", duration: "16:20", free: true, youtubeId: "" },
+      { title: "Differentiation from First Principles", duration: "22:00", free: false, youtubeId: "" },
+      { title: "Chain Rule", duration: "19:45", free: false, youtubeId: "" },
+      { title: "Applications of Derivatives", duration: "27:30", free: false, youtubeId: "" },
+    ]},
+  ],
+  3: [
+    { name: "Integral Calculus", videos: [
+      { title: "Introduction to Integration", duration: "16:00", free: true, youtubeId: "" },
+      { title: "Standard Integrals", duration: "20:30", free: true, youtubeId: "" },
+      { title: "Integration by Substitution", duration: "22:00", free: false, youtubeId: "" },
+      { title: "Definite Integrals", duration: "24:15", free: false, youtubeId: "" },
+      { title: "Area Under a Curve", duration: "26:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Statistics", videos: [
+      { title: "Mean, Median, Mode", duration: "14:30", free: true, youtubeId: "" },
+      { title: "Standard Deviation", duration: "18:20", free: false, youtubeId: "" },
+      { title: "Probability Distributions", duration: "22:00", free: false, youtubeId: "" },
+    ]},
+    { name: "Conic Sections", videos: [
+      { title: "Circle Equations", duration: "17:00", free: true, youtubeId: "" },
+      { title: "Parabola", duration: "20:45", free: false, youtubeId: "" },
+      { title: "Ellipse & Hyperbola", duration: "24:30", free: false, youtubeId: "" },
+    ]},
+    { name: "Mechanics", videos: [
+      { title: "Forces & Motion", duration: "18:00", free: false, youtubeId: "" },
+      { title: "Projectile Motion", duration: "22:30", free: false, youtubeId: "" },
+      { title: "Work, Energy & Power", duration: "20:15", free: false, youtubeId: "" },
+    ]},
+  ],
+};
+
+function loadChaptersOverride() {
+  try {
+    const raw = localStorage.getItem('mc_chapters_override');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+
+// merge saved overrides on top of defaults so admin always sees the latest
+let chaptersData = Object.assign({}, defaultChapters, loadChaptersOverride());
+
+let activeVideoCourseId = null;
+let workingChapters = [];
 
 /* ── gate ── */
 function checkPassword() {
@@ -861,6 +1080,7 @@ function renderCourses() {
       <div class="cac-top">
         <span class="cac-tag" style="background:${tagBg};color:${col};border:1px solid ${col}33">${c.tag}</span>
         <div class="cac-actions">
+          <button class="btn-sm" onclick="openVideoManager(${c.id})">Manage videos</button>
           <button class="btn-sm" onclick="openEditCourse(${c.id})">Edit</button>
           <button class="btn-sm btn-danger" onclick="deleteCourse(${c.id})">Remove</button>
         </div>
@@ -960,6 +1180,106 @@ function saveCourse() {
 
   closeModal('course-modal');
   renderAll();
+}
+
+/* ── VIDEO MANAGER ── */
+function openVideoManager(courseId) {
+  const c = courses.find(x => x.id === courseId);
+  if (!c) return;
+  activeVideoCourseId = courseId;
+  // deep copy so cancel doesn't mutate saved data
+  workingChapters = JSON.parse(JSON.stringify(chaptersData[courseId] || []));
+  document.getElementById('video-modal-title').textContent = `Manage Videos — ${c.title}`;
+  renderVideoManager();
+  openModal('video-modal');
+}
+
+function renderVideoManager() {
+  const body = document.getElementById('video-modal-body');
+  if (!workingChapters.length) {
+    body.innerHTML = '<div style="text-align:center;color:#334155;font-size:13px;padding:20px 0">No chapters yet. Click "+ Add chapter" to start.</div>';
+    return;
+  }
+  body.innerHTML = workingChapters.map((ch, ci) => `
+    <div class="chapter-box">
+      <div class="chapter-head">
+        <input type="text" value="${escapeAttr(ch.name)}" placeholder="Chapter name"
+          oninput="workingChapters[${ci}].name = this.value" />
+        <span class="video-count-tag">${ch.videos.length} video${ch.videos.length !== 1 ? 's' : ''}</span>
+        <button class="btn-x" title="Remove chapter" onclick="removeChapter(${ci})">✕</button>
+      </div>
+      ${ch.videos.map((v, vi) => `
+        <div class="video-edit-row">
+          <input type="text" value="${escapeAttr(v.title)}" placeholder="Video title"
+            oninput="workingChapters[${ci}].videos[${vi}].title = this.value" />
+          <input type="text" value="${escapeAttr(v.duration)}" placeholder="mm:ss"
+            oninput="workingChapters[${ci}].videos[${vi}].duration = this.value" />
+          <label class="free-check">
+            <input type="checkbox" ${v.free ? 'checked' : ''}
+              onchange="workingChapters[${ci}].videos[${vi}].free = this.checked" /> Free
+          </label>
+          <button class="btn-x" title="Remove video" onclick="removeVideo(${ci}, ${vi})">✕</button>
+        </div>
+        <div class="video-yt-row">
+          <input type="text" value="${escapeAttr(v.youtubeId || '')}" placeholder="YouTube video ID (e.g. dQw4w9WgXcQ) — leave blank if not uploaded yet"
+            oninput="workingChapters[${ci}].videos[${vi}].youtubeId = this.value.trim()" />
+        </div>
+      `).join('')}
+      <div class="chapter-foot">
+        <button class="btn-add-video" onclick="addVideo(${ci})">+ Add video to this chapter</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addChapter() {
+  workingChapters.push({ name: '', videos: [] });
+  renderVideoManager();
+}
+
+function removeChapter(ci) {
+  if (!confirm('Remove this chapter and all its videos?')) return;
+  workingChapters.splice(ci, 1);
+  renderVideoManager();
+}
+
+function addVideo(ci) {
+  workingChapters[ci].videos.push({ title: '', duration: '', free: false, youtubeId: '' });
+  renderVideoManager();
+}
+
+function removeVideo(ci, vi) {
+  workingChapters[ci].videos.splice(vi, 1);
+  renderVideoManager();
+}
+
+function saveVideoManager() {
+  if (activeVideoCourseId === null) return;
+  chaptersData[activeVideoCourseId] = workingChapters;
+
+  // persist override to localStorage so course.html picks it up
+  const overrides = loadChaptersOverride();
+  overrides[activeVideoCourseId] = workingChapters;
+  try {
+    localStorage.setItem('mc_chapters_override', JSON.stringify(overrides));
+  } catch (e) {
+    alert('Could not save — storage may be full or blocked.');
+    return;
+  }
+
+  // keep the chapter/video counts on the course card in sync
+  const c = courses.find(x => x.id === activeVideoCourseId);
+  if (c) {
+    c.chapters = workingChapters.length;
+    c.videos = workingChapters.reduce((s, ch) => s + ch.videos.length, 0);
+  }
+
+  closeModal('video-modal');
+  renderAll();
+}
+
+function escapeAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 /* ── MODAL HELPERS ── */

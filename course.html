@@ -783,6 +783,23 @@ const params = new URLSearchParams(location.search);
 const courseId = parseInt(params.get('id') || '0');
 const course = courseData[courseId] || courseData[0];
 
+/* ── pull in any chapter/video edits made in the admin panel ──
+   The admin "Manage videos" screen (admin-mc2025.html) saves its
+   edits to localStorage under 'mc_chapters_override', keyed by
+   course id. If an override exists for this course, it replaces
+   the hardcoded chapters above so new videos show up right away.
+   SUPABASE TODO: replace this whole block with a
+   supabase.from('chapters').select() call. */
+try {
+  const raw = localStorage.getItem('mc_chapters_override');
+  if (raw) {
+    const overrides = JSON.parse(raw);
+    if (overrides && overrides[courseId]) {
+      course.chapters = overrides[courseId];
+    }
+  }
+} catch (e) { /* ignore bad/corrupted storage */ }
+
 /* ── total video count ── */
 const totalVideos = course.chapters.reduce((s, ch) => s + ch.videos.length, 0);
 const freeCount = course.chapters.reduce((s, ch) => s + ch.videos.filter(v => v.free).length, 0);
