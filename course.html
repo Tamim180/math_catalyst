@@ -161,6 +161,7 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
   .chapter-right .lock-badge,.lock-tooltip{display:none}
   .chapter-header{padding:14px 16px} .video-row{padding:12px 16px}
 }
+.enroll-btn.pending,.mobile-enroll.pending{background:rgba(245,158,11,.1)!important;color:#f59e0b!important;border:1px solid rgba(245,158,11,.3)!important;box-shadow:none!important;cursor:default}
 </style>
 </head>
 <body>
@@ -208,7 +209,10 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
 
 <div class="mobile-bar" id="mobile-bar"></div>
 
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="data.js"></script>
+<script type="module">
 /* ============================================================
    COURSE DATA — one object per course.
    To add/remove courses, edit this array.
@@ -216,227 +220,10 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
    free: true  → plays for everyone
    free: false → locked until purchased
 ============================================================ */
-const courseData = [
-  {
-    id: 0,
-    title: "Class 9 Math",
-    tag: "SSC",
-    tagColor: "#22d3ee",
-    tagBg: "rgba(34,211,238,0.08)",
-    accentFrom: "#0a2a3a",
-    desc: "Full syllabus coverage for Class 9. Algebra, geometry, trigonometry and more — taught step by step.",
-    price: null,
-    owned: false,
-    chapters: [
-      {
-        name: "Real Numbers & Surds",
-        videos: [
-          { title: "Introduction to Real Numbers", duration: "12:30", free: true },
-          { title: "Rational vs Irrational Numbers", duration: "15:45", free: true },
-          { title: "Surds — Simplification", duration: "18:20", free: false },
-          { title: "Operations on Surds", duration: "22:10", free: false },
-        ]
-      },
-      {
-        name: "Algebraic Expressions",
-        videos: [
-          { title: "Polynomials — Basics", duration: "14:00", free: true },
-          { title: "Factorisation Techniques", duration: "20:15", free: false },
-          { title: "Algebraic Identities", duration: "17:40", free: false },
-          { title: "Remainder & Factor Theorem", duration: "25:00", free: false },
-        ]
-      },
-      {
-        name: "Linear Equations",
-        videos: [
-          { title: "Solving One-Variable Equations", duration: "13:20", free: true },
-          { title: "Simultaneous Equations", duration: "19:50", free: false },
-          { title: "Word Problems", duration: "21:00", free: false },
-        ]
-      },
-      {
-        name: "Geometry — Triangles",
-        videos: [
-          { title: "Triangle Congruence", duration: "16:30", free: false },
-          { title: "Triangle Similarity", duration: "18:45", free: false },
-          { title: "Pythagoras Theorem", duration: "20:00", free: false },
-        ]
-      },
-      {
-        name: "Trigonometry",
-        videos: [
-          { title: "Intro to Trigonometric Ratios", duration: "14:55", free: true },
-          { title: "sin, cos, tan — Values", duration: "17:20", free: false },
-          { title: "Trigonometric Identities", duration: "22:30", free: false },
-          { title: "Height & Distance Problems", duration: "26:00", free: false },
-        ]
-      }
-    ]
-  },
-  {
-    id: 1,
-    title: "Class 10 Math",
-    tag: "SSC",
-    tagColor: "#22d3ee",
-    tagBg: "rgba(34,211,238,0.08)",
-    accentFrom: "#0a2a3a",
-    desc: "Complete Class 10 math preparation. Focused on board exam patterns with solved examples.",
-    price: null,
-    owned: false,
-    chapters: [
-      {
-        name: "Quadratic Equations",
-        videos: [
-          { title: "Introduction to Quadratics", duration: "13:00", free: true },
-          { title: "Factorisation Method", duration: "16:40", free: true },
-          { title: "Quadratic Formula", duration: "19:20", free: false },
-          { title: "Nature of Roots", duration: "18:00", free: false },
-        ]
-      },
-      {
-        name: "Arithmetic Progression",
-        videos: [
-          { title: "AP — Introduction", duration: "12:10", free: true },
-          { title: "nth Term Formula", duration: "15:30", free: false },
-          { title: "Sum of n Terms", duration: "20:00", free: false },
-        ]
-      },
-      {
-        name: "Coordinate Geometry",
-        videos: [
-          { title: "Distance Formula", duration: "14:20", free: true },
-          { title: "Section Formula", duration: "17:00", free: false },
-          { title: "Area of Triangle", duration: "16:45", free: false },
-        ]
-      },
-      {
-        name: "Circles",
-        videos: [
-          { title: "Tangent to a Circle", duration: "18:30", free: false },
-          { title: "Chord Properties", duration: "20:15", free: false },
-          { title: "Cyclic Quadrilateral", duration: "22:00", free: false },
-        ]
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "HSC 1st Year Math",
-    tag: "HSC",
-    tagColor: "#f59e0b",
-    tagBg: "rgba(245,158,11,0.08)",
-    accentFrom: "#2a1a05",
-    desc: "Higher math for HSC 1st year. Calculus, vectors, complex numbers — from fundamentals to advanced.",
-    price: null,
-    owned: false,
-    chapters: [
-      {
-        name: "Complex Numbers",
-        videos: [
-          { title: "Introduction to Complex Numbers", duration: "15:00", free: true },
-          { title: "Argand Plane", duration: "18:20", free: true },
-          { title: "Modulus & Argument", duration: "20:40", free: false },
-          { title: "De Moivre's Theorem", duration: "24:10", free: false },
-        ]
-      },
-      {
-        name: "Matrices & Determinants",
-        videos: [
-          { title: "Matrix Operations", duration: "16:30", free: true },
-          { title: "Determinants", duration: "19:00", free: false },
-          { title: "Inverse of a Matrix", duration: "22:15", free: false },
-          { title: "Cramer's Rule", duration: "25:00", free: false },
-        ]
-      },
-      {
-        name: "Vectors",
-        videos: [
-          { title: "Vector Basics", duration: "14:00", free: true },
-          { title: "Dot Product", duration: "17:30", free: false },
-          { title: "Cross Product", duration: "20:00", free: false },
-        ]
-      },
-      {
-        name: "Differential Calculus",
-        videos: [
-          { title: "Limits — Introduction", duration: "16:20", free: true },
-          { title: "Differentiation from First Principles", duration: "22:00", free: false },
-          { title: "Chain Rule", duration: "19:45", free: false },
-          { title: "Applications of Derivatives", duration: "27:30", free: false },
-        ]
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "HSC 2nd Year Math",
-    tag: "HSC",
-    tagColor: "#f59e0b",
-    tagBg: "rgba(245,158,11,0.08)",
-    accentFrom: "#2a1a05",
-    desc: "Final year HSC math. Integration, statistics, mechanics and full board exam preparation.",
-    price: null,
-    owned: false,
-    chapters: [
-      {
-        name: "Integral Calculus",
-        videos: [
-          { title: "Introduction to Integration", duration: "16:00", free: true },
-          { title: "Standard Integrals", duration: "20:30", free: true },
-          { title: "Integration by Substitution", duration: "22:00", free: false },
-          { title: "Definite Integrals", duration: "24:15", free: false },
-          { title: "Area Under a Curve", duration: "26:00", free: false },
-        ]
-      },
-      {
-        name: "Statistics",
-        videos: [
-          { title: "Mean, Median, Mode", duration: "14:30", free: true },
-          { title: "Standard Deviation", duration: "18:20", free: false },
-          { title: "Probability Distributions", duration: "22:00", free: false },
-        ]
-      },
-      {
-        name: "Conic Sections",
-        videos: [
-          { title: "Circle Equations", duration: "17:00", free: true },
-          { title: "Parabola", duration: "20:45", free: false },
-          { title: "Ellipse & Hyperbola", duration: "24:30", free: false },
-        ]
-      },
-      {
-        name: "Mechanics",
-        videos: [
-          { title: "Forces & Motion", duration: "18:00", free: false },
-          { title: "Projectile Motion", duration: "22:30", free: false },
-          { title: "Work, Energy & Power", duration: "20:15", free: false },
-        ]
-      }
-    ]
-  }
-];
-
-/* ── read which course to show from URL param (?id=0) ── */
 const params = new URLSearchParams(location.search);
-const courseId = parseInt(params.get('id') || '0');
-const course = courseData[courseId] || courseData[0];
-
-/* ── pull in any chapter/video edits made in the admin panel ──
-   The admin "Manage videos" screen (admin-mc2025.html) saves its
-   edits to localStorage under 'mc_chapters_override', keyed by
-   course id. If an override exists for this course, it replaces
-   the hardcoded chapters above so new videos show up right away.
-   SUPABASE TODO: replace this whole block with a
-   supabase.from('chapters').select() call. */
-try {
-  const raw = localStorage.getItem('mc_chapters_override');
-  if (raw) {
-    const overrides = JSON.parse(raw);
-    if (overrides && overrides[courseId]) {
-      course.chapters = overrides[courseId];
-    }
-  }
-} catch (e) { /* ignore bad/corrupted storage */ }
+const courseId = parseInt(params.get('id'));
+const course = await fetchCourse(courseId);   // loaded from Supabase (see data.js)
+if (!course) { location.href = 'courses.html'; throw new Error('Course not found'); }
 
 /* ── total video count ── */
 const totalVideos = course.chapters.reduce((s, ch) => s + ch.videos.length, 0);
@@ -506,7 +293,7 @@ course.chapters.forEach((ch, ci) => {
       ${ch.videos.map((v, vi) => {
         const isLocked = !v.free && !course.owned;
         return `
-          <div class="video-row ${isLocked ? 'locked' : ''}" ${!isLocked ? `onclick="playVideo('${v.title}', '${v.youtubeId || ''}')"` : ''}>
+          <div class="video-row ${isLocked ? 'locked' : ''}" ${!isLocked ? `onclick="playVideo('${v.title}', ${v.id})"` : ''}>
             <div class="play-btn ${isLocked ? 'locked-btn' : ''}">
               ${isLocked ? '🔒' : '▶'}
             </div>
@@ -542,8 +329,8 @@ document.getElementById('sidebar').innerHTML = `
           : `<div class="price-tbd">Price coming soon</div>`}
         <div class="price-note">One-time payment · No subscription</div>
       </div>
-      <button class="enroll-btn ${course.owned ? 'owned' : ''}" onclick="${course.owned ? '' : "location.href='purchase.html?id="+course.id+"'"}">
-        ${course.owned ? '✓ You are enrolled' : 'Enroll now'}
+      <button class="enroll-btn ${course.owned ? 'owned' : course.pending ? 'pending' : ''}" onclick="${course.owned || course.pending ? '' : "location.href='purchase.html?id="+course.id+"'"}">
+        ${course.owned ? '✓ You are enrolled' : course.pending ? '⏳ Request pending' : 'Enroll now'}
       </button>
       <div class="guarantee">🔒 Secure payment via bKash</div>
     </div>
@@ -555,8 +342,8 @@ document.getElementById('mobile-bar').innerHTML = `
   <div class="mobile-price">
     ${course.price ? `<span class="cur">৳</span>${course.price}` : 'Price TBD'}
   </div>
-  <button class="mobile-enroll" onclick="${course.owned ? '' : "location.href='purchase.html?id="+course.id+"'"}">
-    ${course.owned ? '✓ Enrolled' : 'Enroll now'}
+  <button class="mobile-enroll ${course.pending ? 'pending' : ''}" onclick="${course.owned || course.pending ? '' : "location.href='purchase.html?id="+course.id+"'"}">
+    ${course.owned ? '✓ Enrolled' : course.pending ? '⏳ Request pending' : 'Enroll now'}
   </button>
 `;
 
@@ -573,12 +360,13 @@ function toggleChapter(header) {
   When youtubeId is present, the modal embeds that video.
   When missing, it shows a "coming soon" placeholder — safe during development.
 */
-function playVideo(title, youtubeId) {
+async function playVideo(title, videoId) {
   const modal = document.getElementById('video-modal');
   const iframe = document.getElementById('modal-iframe');
   const modalTitle = document.getElementById('modal-title');
   const modalCourse = document.getElementById('modal-course-name');
 
+  const youtubeId = await fetchYoutubeId(videoId);   // database only returns it if allowed
   modalTitle.textContent = title;
   modalCourse.textContent = course.title;
 
@@ -641,6 +429,9 @@ function draw() {
   requestAnimationFrame(draw);
 }
 draw();
+
+/* module scripts keep functions private, so expose the ones used by onclick="" */
+Object.assign(window, { toggleChapter, playVideo, closeVideoModal, closeModal });
 </script>
 </body>
 </html>

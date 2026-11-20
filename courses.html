@@ -115,6 +115,8 @@ main{position:relative;z-index:2;max-width:var(--container);margin:0 auto;paddin
 .enroll-btn{min-height:40px;padding:0 18px;font-size:14px}
 .empty{grid-column:1/-1;padding:60px 0;text-align:center;color:var(--text-3)}
 @media(max-width:640px){.nav-user{display:none} main{padding-top:var(--s6)}}
+.enroll-btn.pending{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.3);box-shadow:none;cursor:default}
+.enroll-btn.pending:hover{transform:none}
 </style>
 </head>
 <body>
@@ -147,7 +149,10 @@ main{position:relative;z-index:2;max-width:var(--container);margin:0 auto;paddin
   <div class="course-grid" id="course-grid"></div>
 </main>
 
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="data.js"></script>
+<script type="module">
 /* ============================================================
    COURSES DATA — edit this array to add / remove / change courses
    Fields:
@@ -162,56 +167,7 @@ main{position:relative;z-index:2;max-width:var(--container);margin:0 auto;paddin
      accentTo   — gradient end color for thumbnail
      owned      — true if student already bought it (will come from backend later)
 ============================================================ */
-const courses = [
-  {
-    title: "Class 9 Math",
-    tag: "SSC",
-    tagClass: "tag-ssc",
-    desc: "Full syllabus coverage for Class 9. Algebra, geometry, trigonometry and more.",
-    chapters: 12,
-    videos: 48,
-    price: null,
-    accentFrom: "#0a2a3a",
-    accentTo: "#050814",
-    owned: false
-  },
-  {
-    title: "Class 10 Math",
-    tag: "SSC",
-    tagClass: "tag-ssc",
-    desc: "Complete Class 10 math preparation. Focused on board exam patterns.",
-    chapters: 14,
-    videos: 56,
-    price: null,
-    accentFrom: "#0a2a3a",
-    accentTo: "#050814",
-    owned: false
-  },
-  {
-    title: "HSC 1st Year Math",
-    tag: "HSC",
-    tagClass: "tag-hsc",
-    desc: "Higher math for HSC 1st year. Calculus, vectors, complex numbers.",
-    chapters: 10,
-    videos: 42,
-    price: null,
-    accentFrom: "#2a1a05",
-    accentTo: "#050814",
-    owned: false
-  },
-  {
-    title: "HSC 2nd Year Math",
-    tag: "HSC",
-    tagClass: "tag-hsc",
-    desc: "Final year HSC math. Statistics, mechanics, and full board preparation.",
-    chapters: 11,
-    videos: 46,
-    price: null,
-    accentFrom: "#2a1a05",
-    accentTo: "#050814",
-    owned: false
-  }
-];
+const courses = await fetchCourses();   // loaded from Supabase (see data.js)
 
 /* ── filters derived from data ── */
 const allTags = ['All', ...new Set(courses.map(c => c.tag))];
@@ -241,7 +197,7 @@ function renderCourses() {
   }
 
   grid.innerHTML = filtered.map((c, i) => `
-    <div class="course-card" onclick="openCourse(${courses.indexOf(c)})">
+    <div class="course-card" onclick="openCourse(${c.id})">
       <div class="card-thumb" style="background: linear-gradient(135deg, ${c.accentFrom}, ${c.accentTo})">
         <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
           ${thumbSVG(c)}
@@ -260,8 +216,8 @@ function renderCourses() {
           <div class="price">
             ${c.price ? `<span class="currency">৳</span>${c.price}` : '<span class="tbd">Price TBD</span>'}
           </div>
-          <button class="enroll-btn ${c.owned ? 'owned' : ''}" onclick="event.stopPropagation(); enrollClick(${courses.indexOf(c)})">
-            ${c.owned ? '✓ Enrolled' : 'Enroll now'}
+          <button class="enroll-btn ${c.owned ? 'owned' : c.pending ? 'pending' : ''}" onclick="event.stopPropagation(); enrollClick(${c.id})">
+            ${c.owned ? '✓ Enrolled' : c.pending ? '⏳ Request pending' : 'Enroll now'}
           </button>
         </div>
       </div>
@@ -290,15 +246,14 @@ function thumbSVG(c) {
   `;
 }
 
-function openCourse(idx) {
-  // will navigate to course page — placeholder for now
-  alert(`Opening: ${courses[idx].title}\n(Course detail page coming next!)`);
+function openCourse(id) {
+  location.href = 'course.html?id=' + id;
 }
 
-function enrollClick(idx) {
-  if (courses[idx].owned) return;
-  // will navigate to purchase page
-  alert(`Enroll in: ${courses[idx].title}\n(Purchase page coming next!)`);
+function enrollClick(id) {
+  const c = courses.find(x => x.id === id);
+  if (c && (c.owned || c.pending)) return;
+  location.href = 'purchase.html?id=' + id;
 }
 
 renderFilters();
@@ -364,6 +319,9 @@ function draw() {
   requestAnimationFrame(draw);
 }
 draw();
+
+/* module scripts keep functions private, so expose the ones used by onclick="" */
+Object.assign(window, { setFilter, openCourse, enrollClick });
 </script>
 </body>
 </html>

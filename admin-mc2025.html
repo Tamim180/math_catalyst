@@ -197,17 +197,7 @@ tr:last-child td{border-bottom:0} tr:hover td{background:rgba(34,211,238,.03)}
   <div class="gate-card">
     <div class="gate-icon">🔐</div>
     <h2>Admin Access</h2>
-    <p>This area is restricted. Enter the admin password to continue.</p>
-    <!--
-      SUPABASE TODO:
-      Replace this password gate with Supabase role-based auth.
-      Check if session user has role = 'admin' in your profiles table.
-      If not admin → redirect to courses.html.
-    -->
-    <input class="gate-input" type="password" id="gate-pw" placeholder="••••••••"
-      onkeydown="if(event.key==='Enter') checkPassword()" />
-    <button class="gate-btn" onclick="checkPassword()">Enter Dashboard</button>
-    <div class="gate-error" id="gate-error">Incorrect password. Try again.</div>
+    <p id="gate-msg">Checking access…</p>
   </div>
 </div>
 
@@ -416,15 +406,9 @@ tr:last-child td{border-bottom:0} tr:hover td{background:rgba(34,211,238,.03)}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script>
-/* ══════════════════════════════════════════════════
-   ADMIN PASSWORD
-   Change this to whatever password your teacher wants.
-   SUPABASE TODO: delete this whole gate and replace
-   with: if (supabase.auth.session()?.user?.role !== 'admin') redirect.
-═══════════════════════════════════════════════════ */
-const ADMIN_PASSWORD = "mathcatalyst2025";
-
 /* ══════════════════════════════════════════════════
    MOCK DATA
    This represents what will come from Supabase later.
@@ -439,19 +423,9 @@ let courses = [
   { id:3, title:"HSC 2nd Year Math", tag:"HSC", desc:"Final year HSC math. Statistics, mechanics, and full board preparation.",        chapters:11, videos:46, price:null, students:0 },
 ];
 
-let requests = [
-  { id:1, name:"Rahim Uddin",   email:"rahim@gmail.com",   course:"Class 9 Math",      txnId:"8AB3CD2EF1", sender:"01712345678", date:"Jun 11, 2026", status:"pending",  note:"" },
-  { id:2, name:"Fatema Khatun", email:"fatema@gmail.com",  course:"HSC 1st Year Math", txnId:"9XY4ZA5BC2", sender:"01898765432", date:"Jun 11, 2026", status:"pending",  note:"Please approve soon" },
-  { id:3, name:"Karim Hossain", email:"karim@gmail.com",   course:"Class 10 Math",     txnId:"2MN7PQ8RS3", sender:"01611223344", date:"Jun 10, 2026", status:"approved", note:"" },
-  { id:4, name:"Nasrin Akter",  email:"nasrin@gmail.com",  course:"HSC 2nd Year Math", txnId:"5TU1VW2XY4", sender:"01755667788", date:"Jun 10, 2026", status:"rejected", note:"" },
-  { id:5, name:"Sabbir Ahmed",  email:"sabbir@gmail.com",  course:"Class 9 Math",      txnId:"3CD6EF7GH5", sender:"01999887766", date:"Jun 9,  2026", status:"approved", note:"" },
-];
-
-let students = [
-  { id:1, name:"Karim Hossain", email:"karim@gmail.com",  class:"Class 10", school:"Dhaka College",       courses:1, joined:"Jun 10, 2026" },
-  { id:2, name:"Nasrin Akter",  email:"nasrin@gmail.com", class:"HSC 2nd",  school:"Notre Dame College",  courses:0, joined:"Jun 10, 2026" },
-  { id:3, name:"Sabbir Ahmed",  email:"sabbir@gmail.com", class:"Class 9",  school:"Ideal School",        courses:1, joined:"Jun 9,  2026" },
-];
+/* loaded from Supabase by loadData() */
+let requests = [];
+let students = [];
 
 let nextCourseId = 10;
 
@@ -584,26 +558,26 @@ let chaptersData = Object.assign({}, defaultChapters, loadChaptersOverride());
 let activeVideoCourseId = null;
 let workingChapters = [];
 
-/* ── gate ── */
-function checkPassword() {
-  const val = document.getElementById('gate-pw').value;
-  if (val === ADMIN_PASSWORD) {
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    renderAll();
-  } else {
-    const err = document.getElementById('gate-error');
-    err.style.display = 'block';
-    document.getElementById('gate-pw').value = '';
-    document.getElementById('gate-pw').focus();
+/* ── admin check (replaces the old password gate) ── */
+async function initAdmin() {
+  const msg = document.getElementById('gate-msg');
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.href = 'login.html'; return; }
+  const { data: prof } = await sb.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+  if (!prof || prof.role !== 'admin') {
+    msg.textContent = 'You do not have admin access.';
+    setTimeout(() => { location.href = 'courses.html'; }, 1500);
+    return;
   }
+  await loadData();
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  renderAll();
 }
-document.getElementById('gate-pw').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
 
-function logout() {
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('gate').style.display = 'flex';
-  document.getElementById('gate-pw').value = '';
+async function logout() {
+  await sb.auth.signOut();
+  location.href = 'login.html';
 }
 
 /* ── tab switching ── */
@@ -671,6 +645,53 @@ function renderOverviewRequests() {
   tbody.innerHTML = recent.map(r => requestRow(r, true)).join('');
 }
 
+/* ── helpers ── */
+// student-typed text must be escaped before going into HTML
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+/* ── load requests + students from Supabase ── */
+async function loadData() {
+  const [enr, pro] = await Promise.all([
+    sb.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false }),
+    sb.from('profiles').select('*').order('created_at', { ascending: false })
+  ]);
+  if (enr.error || pro.error) { alert('Could not load data: ' + (enr.error || pro.error).message); return; }
+  const byId = Object.fromEntries(pro.data.map(p => [p.id, p]));
+
+  requests = enr.data.map(e => ({
+    id: e.id,
+    name: (byId[e.user_id] && byId[e.user_id].full_name) || '—',
+    email: e.student_email || (byId[e.user_id] && byId[e.user_id].email) || '—',
+    course: e.courses ? e.courses.title : '—',
+    txnId: e.txn_id || '',
+    sender: e.sender_number || '',
+    date: fmtDate(e.created_at),
+    status: e.status,
+    note: e.note || '',
+    screenshot: e.screenshot_path,
+    amount: e.amount
+  }));
+
+  const approvedCount = {};
+  enr.data.filter(e => e.status === 'approved')
+    .forEach(e => { approvedCount[e.user_id] = (approvedCount[e.user_id] || 0) + 1; });
+
+  students = pro.data.filter(p => p.role === 'student').map(p => ({
+    id: p.id,
+    name: p.full_name || '—',
+    email: p.email || '—',
+    class: p.class_level || '—',
+    school: p.school || '—',
+    courses: approvedCount[p.id] || 0,
+    joined: fmtDate(p.created_at)
+  }));
+}
+
 /* ── REQUESTS ── */
 let reqFilter = '';
 function filterRequests(val) { reqFilter = val.toLowerCase(); renderRequests(); }
@@ -691,73 +712,69 @@ function renderRequests() {
 
 function requestRow(r, short) {
   const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' }[r.status];
+  const approveReject = `<button class="btn-approve" onclick="approveReq(${r.id})">Approve</button>
+        <button class="btn-reject"  onclick="rejectReq(${r.id})">Reject</button>`;
   const actions = r.status === 'pending'
-    ? `<div class="action-btns">
-        <button class="btn-approve" onclick="approveReq(${r.id})">Approve</button>
-        <button class="btn-reject"  onclick="rejectReq(${r.id})">Reject</button>
-        <button class="btn-sm"      onclick="viewReq(${r.id})">Detail</button>
+    ? `<div class="action-btns">${approveReject}
+        <button class="btn-sm" onclick="viewReq(${r.id})">Detail</button>
        </div>`
     : `<button class="btn-sm" onclick="viewReq(${r.id})">Detail</button>`;
 
   if (short) return `
     <tr>
-      <td class="td-name">${r.name}<br><span class="td-email">${r.email}</span></td>
-      <td>${r.course}</td>
-      <td>${r.date}</td>
+      <td class="td-name">${esc(r.name)}<br><span class="td-email">${esc(r.email)}</span></td>
+      <td>${esc(r.course)}</td>
+      <td>${esc(r.date)}</td>
       <td><span class="status-badge ${statusClass}">${r.status}</span></td>
-      <td>${r.status === 'pending' ? `<div class="action-btns"><button class="btn-approve" onclick="approveReq(${r.id})">Approve</button><button class="btn-reject" onclick="rejectReq(${r.id})">Reject</button></div>` : '—'}</td>
+      <td>${r.status === 'pending' ? `<div class="action-btns">${approveReject}</div>` : '—'}</td>
     </tr>`;
 
   return `
     <tr>
-      <td class="td-name">${r.name}<br><span class="td-email">${r.email}</span></td>
-      <td>${r.course}</td>
-      <td style="font-family:monospace;font-size:12px;color:#22d3ee">${r.txnId}</td>
-      <td style="font-family:monospace;font-size:12px">${r.sender}</td>
-      <td>${r.date}</td>
+      <td class="td-name">${esc(r.name)}<br><span class="td-email">${esc(r.email)}</span></td>
+      <td>${esc(r.course)}</td>
+      <td style="font-family:monospace;font-size:12px;color:#22d3ee">${esc(r.txnId)}</td>
+      <td style="font-family:monospace;font-size:12px">${esc(r.sender)}</td>
+      <td>${esc(r.date)}</td>
       <td><span class="status-badge ${statusClass}">${r.status}</span></td>
       <td>${actions}</td>
     </tr>`;
 }
 
-function approveReq(id) {
-  const r = requests.find(x => x.id === id);
-  if (!r) return;
-  r.status = 'approved';
-  // add student if not exists
-  if (!students.find(s => s.email === r.email)) {
-    students.push({ id: Date.now(), name: r.name, email: r.email, class:'—', school:'—', courses:1, joined: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) });
-  } else {
-    students.find(s => s.email === r.email).courses++;
-  }
+async function setReqStatus(id, status) {
+  const { error } = await sb.from('enrollments')
+    .update({ status, reviewed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) { alert('Could not update: ' + error.message); return; }
+  await loadData();
   renderAll();
 }
-
-function rejectReq(id) {
-  const r = requests.find(x => x.id === id);
-  if (r) { r.status = 'rejected'; renderAll(); }
-}
+function approveReq(id) { setReqStatus(id, 'approved'); }
+function rejectReq(id)  { setReqStatus(id, 'rejected'); }
 
 function viewReq(id) {
   const r = requests.find(x => x.id === id);
   if (!r) return;
   const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' }[r.status];
+  const row = (label, val, extra) => `<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">${label}</span><span style="color:#e2e8f0;${extra || ''}">${val}</span></div>`;
   document.getElementById('req-modal-body').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:16px;font-weight:700;color:#e2e8f0">${r.name}</div>
-          <div style="font-size:13px;color:#475569">${r.email}</div>
+          <div style="font-size:16px;font-weight:700;color:#e2e8f0">${esc(r.name)}</div>
+          <div style="font-size:13px;color:#475569">${esc(r.email)}</div>
         </div>
         <span class="status-badge ${statusClass}">${r.status}</span>
       </div>
       <div style="background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.1);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">Course</span><span style="color:#e2e8f0;font-weight:500">${r.course}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">Transaction ID</span><span style="color:#22d3ee;font-family:monospace">${r.txnId}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">Sender number</span><span style="color:#e2e8f0;font-family:monospace">${r.sender}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">Submitted</span><span style="color:#e2e8f0">${r.date}</span></div>
-        ${r.note ? `<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">Note</span><span style="color:#94a3b8;max-width:220px;text-align:right">${r.note}</span></div>` : ''}
+        ${row('Course', esc(r.course))}
+        ${row('Amount', r.amount ? '৳' + esc(r.amount) : '—')}
+        ${row('Transaction ID', esc(r.txnId), 'color:#22d3ee;font-family:monospace')}
+        ${row('Sender number', esc(r.sender), 'font-family:monospace')}
+        ${row('Submitted', esc(r.date))}
+        ${r.note ? row('Note', esc(r.note), 'color:#94a3b8;max-width:220px;text-align:right') : ''}
       </div>
+      <div id="req-shot" style="font-size:13px;color:#475569">${r.screenshot ? 'Loading screenshot…' : 'No screenshot attached'}</div>
     </div>
   `;
   document.getElementById('modal-approve-btn').onclick = () => { approveReq(id); closeModal('req-modal'); };
@@ -765,6 +782,15 @@ function viewReq(id) {
   document.getElementById('modal-approve-btn').style.display = r.status === 'pending' ? '' : 'none';
   document.getElementById('modal-reject-btn').style.display  = r.status === 'pending' ? '' : 'none';
   openModal('req-modal');
+
+  if (r.screenshot) {
+    sb.storage.from('payment-screenshots').createSignedUrl(r.screenshot, 300).then(({ data, error }) => {
+      const box = document.getElementById('req-shot');
+      if (!box) return;
+      if (error || !data) { box.textContent = 'Could not load screenshot.'; return; }
+      box.innerHTML = `<a href="${data.signedUrl}" target="_blank" rel="noopener"><img src="${data.signedUrl}" alt="Payment screenshot" style="max-width:100%;max-height:300px;border-radius:10px;border:1px solid rgba(34,211,238,0.15)"></a>`;
+    });
+  }
 }
 
 /* ── STUDENTS ── */
@@ -783,12 +809,12 @@ function renderStudents() {
   }
   tbody.innerHTML = filtered.map(s => `
     <tr>
-      <td class="td-name">${s.name}</td>
-      <td class="td-email">${s.email}</td>
-      <td>${s.class}</td>
-      <td>${s.school}</td>
+      <td class="td-name">${esc(s.name)}</td>
+      <td class="td-email">${esc(s.email)}</td>
+      <td>${esc(s.class)}</td>
+      <td>${esc(s.school)}</td>
       <td><span style="color:#22d3ee;font-weight:600">${s.courses}</span></td>
-      <td>${s.joined}</td>
+      <td>${esc(s.joined)}</td>
     </tr>
   `).join('');
 }
@@ -1012,6 +1038,8 @@ function openModal(id) { document.getElementById(id).classList.add('open'); docu
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
 function closeModalOuter(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal('course-modal'); closeModal('req-modal'); } });
+
+initAdmin();
 </script>
 </body>
 </html>

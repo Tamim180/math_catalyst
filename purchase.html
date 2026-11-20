@@ -282,15 +282,11 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
 
 </div>
 
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="data.js"></script>
+<script type="module">
 /* ── course data (same as courses.html — will come from Supabase later) ── */
-const courseData = [
-  { id:0, title:"Class 9 Math",       tag:"SSC", tagColor:"#22d3ee", tagBg:"rgba(34,211,238,0.08)", accentFrom:"#0a2a3a", price:null, chapters:12, videos:48 },
-  { id:1, title:"Class 10 Math",      tag:"SSC", tagColor:"#22d3ee", tagBg:"rgba(34,211,238,0.08)", accentFrom:"#0a2a3a", price:null, chapters:14, videos:56 },
-  { id:2, title:"HSC 1st Year Math",  tag:"HSC", tagColor:"#f59e0b", tagBg:"rgba(245,158,11,0.08)", accentFrom:"#2a1a05", price:null, chapters:10, videos:42 },
-  { id:3, title:"HSC 2nd Year Math",  tag:"HSC", tagColor:"#f59e0b", tagBg:"rgba(245,158,11,0.08)", accentFrom:"#2a1a05", price:null, chapters:11, videos:46 },
-];
-
 /*
   ── TEACHER: SET YOUR BKASH NUMBER HERE ──
   Replace the string below with the real bKash number.
@@ -298,8 +294,33 @@ const courseData = [
 const BKASH_NUMBER = "01XXXXXXXXXX";
 
 const params = new URLSearchParams(location.search);
-const courseId = parseInt(params.get('id') || '0');
-const course = courseData[courseId] || courseData[0];
+const courseId = parseInt(params.get('id'));
+
+/* must be logged in */
+const { data: { session } } = await sb.auth.getSession();
+if (!session) { location.href = 'login.html'; throw new Error('Not logged in'); }
+const user = session.user;
+
+/* course from Supabase (see data.js) */
+const course = await fetchCourse(courseId);
+if (!course) { location.href = 'courses.html'; throw new Error('Course not found'); }
+if (course.owned) { location.href = 'course.html?id=' + course.id; throw new Error('Already enrolled'); }
+const chapterCount = course.chapters.length;
+const videoCount = course.chapters.reduce((s, ch) => s + ch.videos.length, 0);
+
+/* prefill name + email */
+const { data: prof } = await sb.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+document.getElementById('f-name').value = (prof && prof.full_name) || '';
+document.getElementById('f-email').value = user.email;
+document.getElementById('f-email').readOnly = true;
+
+/* already sent a request for this course? */
+const { data: existing } = await sb.from('enrollments').select('status')
+  .eq('user_id', user.id).eq('course_id', course.id).eq('status', 'pending').maybeSingle();
+if (existing) {
+  document.getElementById('enroll-form').style.display = 'none';
+  document.getElementById('success-box').classList.add('show');
+}
 
 /* fill dynamic content */
 document.getElementById('bkash-num').childNodes[0].textContent = BKASH_NUMBER + ' ';
@@ -316,8 +337,8 @@ document.getElementById('summary-card').innerHTML = `
   <div class="summary-body">
     <div class="summary-label">Order summary</div>
     <div class="summary-title">${course.title}</div>
-    <div class="summary-line"><span class="label">Chapters</span><span class="val">${course.chapters}</span></div>
-    <div class="summary-line"><span class="label">Videos</span><span class="val">${course.videos}</span></div>
+    <div class="summary-line"><span class="label">Chapters</span><span class="val">${chapterCount}</span></div>
+    <div class="summary-line"><span class="label">Videos</span><span class="val">${videoCount}</span></div>
     <div class="summary-line"><span class="label">Access type</span><span class="val">Permanent ♾️</span></div>
     <div class="summary-line"><span class="label">Payment method</span><span class="val">bKash</span></div>
     <div class="summary-total">
@@ -346,31 +367,69 @@ function copyNumber() {
 }
 
 /* form validation & submit */
-function submitForm() {
-  const name  = document.getElementById('f-name').value.trim();
-  const email = document.getElementById('f-email').value.trim();
-  const txn   = document.getElementById('f-txn').value.trim();
+let submitting = false;
+async function submitForm() {
+  if (submitting) return;
+  const name   = document.getElementById('f-name').value.trim();
+  const txn    = document.getElementById('f-txn').value.trim();
   const sender = document.getElementById('f-sender').value.trim();
+  const note   = document.getElementById('f-note').value.trim();
+  const file   = document.getElementById('f-screenshot').files[0];
 
-  if (!name || !email || !txn || !sender) {
-    alert('Please fill in all required fields (name, email, transaction ID, sender number).');
+  if (!name || !txn || !sender) {
+    alert('Please fill in all required fields (name, transaction ID, sender number).');
     return;
   }
-
   if (txn.length < 6) {
     alert('Transaction ID looks too short — please double check it.');
     return;
   }
+  if (!course.price) {
+    alert('The price for this course has not been set yet. Please try again later.');
+    return;
+  }
+  if (file && file.size > 5 * 1024 * 1024) {
+    alert('Screenshot is too big (max 5 MB).');
+    return;
+  }
 
-  /* 
-    TODO when Supabase is ready:
-    POST { name, email, txn, sender, courseId, courseName } to your enrollments table
-    Teacher sees this in admin dashboard and approves.
-  */
+  submitting = true;
+  document.body.style.cursor = 'wait';
+  try {
+    /* 1. upload screenshot (optional) */
+    let screenshotPath = null;
+    if (file) {
+      const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '').toLowerCase();
+      screenshotPath = `${user.id}/${Date.now()}.${ext}`;
+      const up = await sb.storage.from('payment-screenshots').upload(screenshotPath, file);
+      if (up.error) { alert('Could not upload screenshot: ' + up.error.message); return; }
+    }
 
-  document.getElementById('enroll-form').style.display = 'none';
-  document.getElementById('success-box').classList.add('show');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    /* 2. save the pending enrollment request */
+    const { error } = await sb.from('enrollments').insert({
+      user_id: user.id,
+      course_id: course.id,
+      status: 'pending',
+      amount: course.price,
+      txn_id: txn,
+      sender_number: sender,
+      screenshot_path: screenshotPath,
+      note: note || null,
+      student_email: user.email
+    });
+    if (error) {
+      if (error.code === '23505') alert('This transaction ID was already submitted, or you already have a request for this course.');
+      else alert('Could not submit: ' + error.message);
+      return;
+    }
+
+    document.getElementById('enroll-form').style.display = 'none';
+    document.getElementById('success-box').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } finally {
+    submitting = false;
+    document.body.style.cursor = '';
+  }
 }
 
 /* ── ambient particles ── */
@@ -400,6 +459,9 @@ function draw() {
   requestAnimationFrame(draw);
 }
 draw();
+
+/* module scripts keep functions private, so expose the ones used by onclick="" */
+Object.assign(window, { copyNumber, submitForm });
 </script>
 </body>
 </html>
