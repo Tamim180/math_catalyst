@@ -3,453 +3,682 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#050814" />
+<meta name="description" content="Structured math video lessons for Class 9, Class 10 and HSC in Bangladesh. Buy once, keep forever." />
 <title>The Math Catalyst — Ignite Thinking. Solve Anything.</title>
+
+<!-- Font: Plus Jakarta Sans. If it fails to load, the phone's normal system font is used instead. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ============================================================
+   1. DESIGN TOKENS
+   The shared look for every page of the site.
+   To retheme the whole site, change the values here.
+============================================================ */
+:root {
+  /* colours */
+  --bg:        #050814;                    /* page background (the particle canvas paints this colour too) */
+  --surface:   rgba(13, 20, 42, 0.78);     /* normal cards */
+  --surface-2: rgba(21, 31, 60, 0.82);     /* hovered / raised cards */
+  --line:      rgba(148, 163, 184, 0.16);  /* thin neutral borders */
+  --line-cyan: rgba(34, 211, 238, 0.30);   /* highlighted borders */
+
+  --text:      #f1f5f9;   /* headings */
+  --text-2:    #b4c0d3;   /* body text */
+  --text-3:    #8a99b0;   /* small / muted text */
+
+  --cyan:      #22d3ee;   /* main brand colour */
+  --cyan-deep: #0891b2;
+  --gold:      #f59e0b;   /* second brand colour: prices, highlights */
+  --gold-soft: #fbbf24;
+  --green:     #34d399;   /* free / success */
+  --violet:    #818cf8;
+  --pink:      #ff6ba0;   /* bKash */
+
+  /* rounding */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+
+  /* spacing scale */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px; --s9: 104px;
+
+  /* layout */
+  --container: 1120px;   /* max content width */
+  --gutter: 20px;        /* left/right page padding */
+  --nav-h: 68px;         /* top bar height */
+
+  /* fonts */
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ============================================================
+   2. BASE
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #050814;
-  color: white;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-2);
+  line-height: 1.6;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* animated particle background (drawn by the script at the bottom) */
 canvas { position: fixed; inset: 0; z-index: 0; }
 
-/* ── NAV ── */
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+img { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+/* ============================================================
+   3. SHARED COMPONENTS (buttons, layout, section headings)
+============================================================ */
+.container { width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
+
+section { position: relative; z-index: 2; scroll-margin-top: var(--nav-h); }
+.section { padding: var(--s9) 0; }
+
+/* buttons: use .btn + .btn-primary or .btn-secondary (+ .btn-sm / .btn-lg for size) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 var(--s5);
+  border-radius: var(--r-md); border: 1px solid transparent;
+  font-size: 15px; font-weight: 700; white-space: nowrap; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--cyan), var(--cyan-deep));
+  color: #031018;
+  box-shadow: 0 6px 24px rgba(34, 211, 238, 0.25);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(34, 211, 238, 0.38); }
+.btn-secondary { background: rgba(255, 255, 255, 0.04); color: var(--text); border-color: var(--line); }
+.btn-secondary:hover { background: rgba(34, 211, 238, 0.08); border-color: var(--line-cyan); }
+.btn-sm { min-height: 40px; padding: 0 18px; font-size: 14px; border-radius: 12px; }
+.btn-lg { min-height: 54px; padding: 0 32px; font-size: 16px; }
+
+/* section heading block: small label, big title, one-line intro */
+.section-head { text-align: center; max-width: 640px; margin: 0 auto var(--s7); }
+.section-label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--cyan);
+  margin-bottom: var(--s3);
+}
+.section-title {
+  font-size: clamp(28px, 4.2vw, 42px); font-weight: 800;
+  line-height: 1.15; letter-spacing: -0.02em;
+  color: var(--text); margin-bottom: var(--s3);
+}
+.section-sub { font-size: 16px; color: var(--text-2); }
+
+/* soft band behind a section, for rhythm while scrolling */
+.section-alt {
+  background: linear-gradient(180deg, rgba(10,16,36,0), rgba(10,16,36,0.6) 18%, rgba(10,16,36,0.6) 82%, rgba(10,16,36,0));
+}
+
+/* ============================================================
+   4. NAV (the .scrolled class is added by the script on scroll)
+============================================================ */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 48px;
-  background: rgba(5,8,20,0);
-  transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
+  height: var(--nav-h);
   border-bottom: 1px solid transparent;
+  transition: background 0.3s, border-color 0.3s;
 }
 nav.scrolled {
-  background: rgba(5,8,20,0.88);
-  border-bottom-color: rgba(34,211,238,0.1);
-  backdrop-filter: blur(16px);
+  background: rgba(5, 8, 20, 0.82);
+  border-bottom-color: var(--line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
-.nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none; }
-.nav-logo img { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 0 6px rgba(34,211,238,0.4)); }
-.nav-logo-text { line-height: 1.1; }
-.nav-logo-text .the  { font-size: 9px;  letter-spacing: 3px; color: #f59e0b; text-transform: uppercase; }
-.nav-logo-text .main { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 1px; }
-.nav-logo-text .cat  { font-size: 10px; letter-spacing: 3px; color: #22d3ee; text-transform: uppercase; }
+.nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
 
-.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-logo img { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.35)); }
+
+/* three-line logo text, reused in the footer */
+.logo-text { line-height: 1.05; }
+.logo-text .the  { display: block; font-size: 9px;  font-weight: 600; letter-spacing: 0.3em; color: var(--gold); text-transform: uppercase; }
+.logo-text .main { display: block; font-size: 16px; font-weight: 800; letter-spacing: 0.06em; color: #fff; }
+.logo-text .cat  { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: var(--cyan); text-transform: uppercase; }
+
+.nav-links { display: flex; gap: 4px; }
 .nav-link {
-  font-size: 14px; color: #64748b; cursor: pointer;
-  text-decoration: none; transition: color 0.2s;
+  padding: 8px 14px; border-radius: 10px;
+  font-size: 14px; font-weight: 500; color: var(--text-2);
+  transition: color 0.2s, background 0.2s;
 }
-.nav-link:hover { color: #e2e8f0; }
+.nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
 
 .nav-cta-row { display: flex; align-items: center; gap: 10px; }
-.nav-signin {
-  padding: 7px 18px; border-radius: 8px;
-  border: 1px solid rgba(34,211,238,0.2);
-  background: transparent; color: #94a3b8;
-  font-size: 13px; cursor: pointer; transition: all 0.2s;
-}
-.nav-signin:hover { border-color: rgba(34,211,238,0.4); color: #22d3ee; }
-.nav-start {
-  padding: 8px 20px; border-radius: 8px; border: none;
-  background: linear-gradient(135deg, #22d3ee, #0891b2);
-  color: #050814; font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
-}
-.nav-start:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(34,211,238,0.3); }
 
-/* ── SECTIONS ── */
-section { position: relative; z-index: 2; }
-
-/* ── HERO ── */
+/* ============================================================
+   5. HERO
+============================================================ */
 .hero {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 120px 24px 80px;
+  min-height: 100vh; min-height: 100svh;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--nav-h) + 40px) 0 var(--s8);
+  overflow: hidden;
+}
+/* soft cyan + gold glow behind the headline */
+.hero::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(620px 360px at 18% 10%, rgba(34, 211, 238, 0.17), transparent 70%),
+    radial-gradient(560px 340px at 84% 20%, rgba(245, 158, 11, 0.12), transparent 70%);
+}
+/* faint maths-paper grid that fades out at the edges */
+.hero::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.4;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 75%);
+          mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 75%);
 }
 
 .hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12px; font-weight: 600; letter-spacing: 2px;
-  text-transform: uppercase; color: #f59e0b;
-  background: rgba(245,158,11,0.08);
-  border: 1px solid rgba(245,158,11,0.2);
-  padding: 5px 14px; border-radius: 20px;
-  margin-bottom: 28px;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 7px 16px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold-soft);
+  background: rgba(245, 158, 11, 0.09);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  margin-bottom: var(--s5);
+}
+.hero-eyebrow .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+  animation: pulse 2.4s infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
 }
 
 .hero h1 {
-  font-size: clamp(36px, 6vw, 72px);
-  font-weight: 900; line-height: 1.05;
-  color: #fff; margin-bottom: 20px;
-  max-width: 820px;
+  font-size: clamp(36px, 5.2vw, 64px); font-weight: 800;
+  line-height: 1.04; letter-spacing: -0.035em;
+  color: #fff; margin: 0 0 var(--s4);
+}
+.hero h1 .cyan   { color: var(--cyan); }
+.hero h1 .orange { color: var(--gold); }
+/* gradient text (only where the browser supports it; otherwise the plain colour above is used) */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero h1 .cyan {
+    background: linear-gradient(120deg, #67e8f9, #22d3ee 55%, #0ea5c6);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .hero h1 .orange {
+    background: linear-gradient(120deg, #fcd34d, #f59e0b 60%, #ea7a0b);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
 }
 
-.hero h1 .cyan  { color: #22d3ee; text-shadow: 0 0 40px rgba(34,211,238,0.3); }
-.hero h1 .orange { color: #f59e0b; }
+.hero-sub { font-size: clamp(16px, 2vw, 19px); color: var(--text-2); max-width: 540px; margin: 0 0 var(--s6); }
+.hero-btns { display: flex; gap: var(--s3); flex-wrap: wrap; }
 
-.hero-sub {
-  font-size: clamp(15px, 2vw, 18px);
-  color: #64748b; line-height: 1.7;
-  max-width: 520px; margin-bottom: 36px;
+/* two columns on desktop: text on the left, teacher picture on the right */
+.hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--s7); align-items: center; margin-bottom: var(--s7); }
+
+/* teacher picture (teacher.jpg) with the stick-figure illustration as backup */
+.hero-visual { justify-self: center; width: 100%; max-width: 340px; }
+.hero-photo, .hero-illus {
+  width: 100%; aspect-ratio: 3 / 4;
+  border-radius: 28px; border: 1px solid var(--line-cyan);
+  box-shadow: 0 0 80px rgba(34, 211, 238, 0.14);
+}
+.hero-photo { display: block; object-fit: cover; }
+.hero-illus {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #0b1731, #070d20);
 }
 
-.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 56px; }
-
-.btn-hero-primary {
-  padding: 14px 32px; border-radius: 10px; border: none;
-  background: linear-gradient(135deg, #22d3ee, #0891b2);
-  color: #050814; font-size: 15px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
-  box-shadow: 0 4px 28px rgba(34,211,238,0.25);
-}
-.btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 36px rgba(34,211,238,0.35); }
-
-.btn-hero-secondary {
-  padding: 14px 32px; border-radius: 10px;
-  border: 1px solid rgba(34,211,238,0.25);
-  background: rgba(34,211,238,0.05);
-  color: #94a3b8; font-size: 15px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-}
-.btn-hero-secondary:hover { border-color: rgba(34,211,238,0.4); color: #e2e8f0; }
-
+/* four quick facts in one glass strip */
 .hero-stats {
-  display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;
-  padding-top: 32px;
-  border-top: 1px solid rgba(34,211,238,0.08);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  max-width: 760px; margin: 0 auto; text-align: center;
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--surface);
 }
+.hero-stat { padding: 20px 12px; }
+.hero-stat + .hero-stat { border-left: 1px solid var(--line); }
+.hero-stat .val { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: var(--cyan); line-height: 1.2; }
+.hero-stat .lbl { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 
-.hero-stat .val { font-size: 28px; font-weight: 800; color: #22d3ee; }
-.hero-stat .lbl { font-size: 12px; color: #334155; margin-top: 3px; }
-
-/* ── SHARED SECTION STYLES ── */
-.section-inner {
-  max-width: 1100px; margin: 0 auto;
-  padding: 96px 24px;
-}
-
-.section-label {
-  font-size: 11px; font-weight: 700; letter-spacing: 3px;
-  text-transform: uppercase; color: #22d3ee;
-  margin-bottom: 14px;
-}
-
-.section-title {
-  font-size: clamp(26px, 4vw, 40px);
-  font-weight: 800; color: #f0f6ff; line-height: 1.15;
-  margin-bottom: 14px;
-}
-
-.section-sub {
-  font-size: 15px; color: #475569; line-height: 1.7;
-  max-width: 520px;
-}
-
-/* ── FEATURES ── */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  margin-top: 48px;
-}
+/* ============================================================
+   6. FEATURES
+============================================================ */
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); }
 
 .feature-card {
-  border-radius: 14px;
-  border: 1px solid rgba(34,211,238,0.1);
-  background: rgba(10,15,35,0.7);
-  backdrop-filter: blur(12px);
-  padding: 24px;
-  transition: border-color 0.2s, transform 0.2s;
+  padding: var(--s5);
+  border-radius: var(--r-lg); border: 1px solid var(--line);
+  background: var(--surface);
+  transition: border-color 0.25s, transform 0.25s, background 0.25s;
 }
-.feature-card:hover { border-color: rgba(34,211,238,0.25); transform: translateY(-2px); }
+.feature-card:hover { border-color: var(--line-cyan); background: var(--surface-2); transform: translateY(-3px); }
+.feature-card h3 { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; margin-bottom: var(--s2); }
+.feature-card p  { font-size: 14.5px; color: var(--text-2); line-height: 1.7; }
 
+/* icon tile: pick a colour with .ic-cyan / .ic-gold / .ic-violet / .ic-green / .ic-pink */
 .feature-icon {
-  width: 44px; height: 44px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; margin-bottom: 14px;
+  width: 48px; height: 48px; border-radius: 14px;
+  display: grid; place-items: center;
+  margin-bottom: var(--s4);
+  border: 1px solid transparent;
 }
+.feature-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ic-cyan   { color: var(--cyan);      background: rgba(34, 211, 238, 0.10);  border-color: rgba(34, 211, 238, 0.24); }
+.ic-gold   { color: var(--gold-soft); background: rgba(245, 158, 11, 0.10);  border-color: rgba(245, 158, 11, 0.26); }
+.ic-violet { color: var(--violet);    background: rgba(129, 140, 248, 0.10); border-color: rgba(129, 140, 248, 0.26); }
+.ic-green  { color: var(--green);     background: rgba(52, 211, 153, 0.10);  border-color: rgba(52, 211, 153, 0.26); }
+.ic-pink   { color: var(--pink);      background: rgba(255, 107, 160, 0.10); border-color: rgba(255, 107, 160, 0.26); }
 
-.feature-card h3 { font-size: 15px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px; }
-.feature-card p  { font-size: 13px; color: #475569; line-height: 1.65; }
-
-/* ── COURSES PREVIEW ── */
-.courses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px; margin-top: 48px;
-}
+/* ============================================================
+   7. COURSE PREVIEW CARDS
+   The cards themselves are built by the script (class names
+   below must stay). Only their look is set here.
+============================================================ */
+.courses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s4); }
 
 .course-preview-card {
-  border-radius: 14px;
-  border: 1px solid rgba(34,211,238,0.1);
-  background: rgba(10,15,35,0.7);
-  backdrop-filter: blur(12px);
-  overflow: hidden;
-  transition: border-color 0.2s, transform 0.2s;
-  cursor: pointer;
+  display: flex; flex-direction: column;
+  border-radius: var(--r-lg); border: 1px solid var(--line);
+  background: var(--surface); overflow: hidden; cursor: pointer;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
 }
-.course-preview-card:hover { border-color: rgba(34,211,238,0.3); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(34,211,238,0.07); }
+.course-preview-card:hover {
+  transform: translateY(-4px); border-color: var(--line-cyan);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
 
-.cpc-thumb {
-  height: 110px;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden;
-}
+.cpc-thumb { height: 124px; position: relative; overflow: hidden; }
 .cpc-thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* make the faint symbol in the thumbnail a little stronger */
+.cpc-thumb svg text   { opacity: 0.26; }
+.cpc-thumb svg circle { stroke-opacity: 0.4; }
+/* small grid on the thumbnail, fading out downwards */
+.cpc-thumb::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 90%);
+          mask-image: linear-gradient(180deg, #000, transparent 90%);
+}
 
-.cpc-body { padding: 16px 18px 20px; }
+.cpc-body { display: flex; flex-direction: column; flex: 1; padding: 18px 20px 20px; }
 .cpc-tag {
-  display: inline-block; font-size: 10px; font-weight: 700;
-  padding: 2px 9px; border-radius: 10px;
-  margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase;
+  align-self: flex-start;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: var(--r-pill);
+  margin-bottom: var(--s3);
 }
-.cpc-title { font-size: 15px; font-weight: 700; color: #e2e8f0; margin-bottom: 6px; }
-.cpc-meta  { font-size: 12px; color: #334155; margin-bottom: 12px; }
-.cpc-price { font-size: 17px; font-weight: 800; color: #f59e0b; }
-.cpc-price .tbd { font-size: 13px; color: #334155; font-weight: 500; }
-
-/* ── TEACHER ── */
-.teacher-wrap {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 56px; align-items: center;
+.cpc-title { font-size: 18px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; color: var(--text); margin-bottom: 6px; }
+.cpc-meta  { font-size: 13px; color: var(--text-3); margin-bottom: var(--s4); }
+.cpc-price {
+  margin-top: auto; padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s2);
+  font-size: 20px; font-weight: 800; color: var(--gold);
 }
+.cpc-price .tbd { font-size: 13px; font-weight: 600; color: var(--text-3); }
+.cpc-price::after { content: "View →"; font-size: 13px; font-weight: 700; color: var(--cyan); }
 
-.teacher-photo-wrap { position: relative; }
+.center-btn { text-align: center; margin-top: var(--s6); }
 
-/* photo — shown if teacher.jpg exists */
+/* ============================================================
+   8. TEACHER
+============================================================ */
+.teacher-wrap { display: grid; grid-template-columns: 340px 1fr; gap: var(--s8); align-items: center; }
+.teacher-photo-wrap { position: relative; justify-self: center; width: 100%; max-width: 320px; }
+
+/* real photo (teacher.jpg) */
 .teacher-photo {
-  width: 100%; max-width: 300px;
-  aspect-ratio: 3/4;
-  border-radius: 20px;
-  object-fit: cover;
-  border: 1px solid rgba(34,211,238,0.2);
-  box-shadow: 0 0 60px rgba(34,211,238,0.08);
-  display: block;
+  display: block; width: 100%;
+  aspect-ratio: 3 / 4; object-fit: cover;
+  border-radius: 28px; border: 1px solid var(--line-cyan);
+  box-shadow: 0 0 80px rgba(34, 211, 238, 0.12);
 }
-
-/* illustration fallback — shown if no photo */
+/* illustration shown instead when there is no photo (the script/onerror switches it on) */
 .teacher-illustration {
-  width: 100%; max-width: 300px;
-  aspect-ratio: 3/4;
-  border-radius: 20px;
-  border: 1px solid rgba(34,211,238,0.15);
-  background: rgba(10,15,35,0.8);
+  position: relative; overflow: hidden;
+  width: 100%; aspect-ratio: 3 / 4;
   display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-  position: relative;
+  border-radius: 28px; border: 1px solid var(--line-cyan);
+  background: linear-gradient(160deg, #0b1731, #070d20);
+  box-shadow: 0 0 80px rgba(34, 211, 238, 0.12);
 }
-
 .teacher-glow {
-  position: absolute;
-  width: 200px; height: 200px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%);
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.14) 0%, transparent 70%);
 }
 
-.teacher-info h2 { font-size: clamp(24px, 3vw, 36px); font-weight: 800; color: #f0f6ff; margin-bottom: 6px; }
-.teacher-role { font-size: 14px; color: #22d3ee; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.5px; }
-.teacher-bio { font-size: 15px; color: #64748b; line-height: 1.8; margin-bottom: 28px; }
+.teacher-info h2 { font-size: clamp(28px, 3.6vw, 40px); font-weight: 800; letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+.teacher-role { font-size: 14px; font-weight: 600; color: var(--cyan); margin-bottom: var(--s5); }
+.teacher-bio  { font-size: 16px; color: var(--text-2); line-height: 1.8; margin-bottom: var(--s5); }
 
-.teacher-quals { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
-.qual {
-  display: flex; align-items: center; gap: 12px;
-  font-size: 14px; color: #94a3b8;
+.teacher-quals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-bottom: var(--s5); }
+.qual { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-2); }
+.qual-check {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(34, 211, 238, 0.12); color: var(--cyan);
 }
-.qual-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #22d3ee; flex-shrink: 0; opacity: 0.6;
-}
+.qual-check svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 
 .teacher-quote {
-  padding: 16px 20px; border-radius: 12px;
-  border-left: 3px solid #f59e0b;
-  background: rgba(245,158,11,0.05);
-  font-size: 14px; color: #94a3b8;
-  font-style: italic; line-height: 1.7;
+  padding: 20px 24px;
+  border-radius: var(--r-md); border-left: 3px solid var(--gold);
+  background: rgba(245, 158, 11, 0.06);
+  font-size: 15px; font-style: italic; color: var(--text-2); line-height: 1.75;
 }
 
-/* ── FAQ ── */
-.faq-list { margin-top: 48px; display: flex; flex-direction: column; gap: 10px; }
+/* ============================================================
+   9. FAQ
+   Items are built by the script; .open is toggled on click.
+============================================================ */
+.faq-list { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--s3); }
 
 .faq-item {
-  border-radius: 12px;
-  border: 1px solid rgba(34,211,238,0.1);
-  background: rgba(10,15,35,0.6);
-  overflow: hidden;
-  transition: border-color 0.2s;
+  border-radius: var(--r-md); border: 1px solid var(--line);
+  background: var(--surface); overflow: hidden;
+  transition: border-color 0.2s, background 0.2s;
 }
-.faq-item.open { border-color: rgba(34,211,238,0.25); }
+.faq-item.open { border-color: var(--line-cyan); background: var(--surface-2); }
 
 .faq-q {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
   padding: 18px 22px; cursor: pointer;
-  font-size: 15px; font-weight: 600; color: #e2e8f0;
-  transition: background 0.15s;
+  font-size: 16px; font-weight: 600; color: var(--text);
 }
-.faq-q:hover { background: rgba(34,211,238,0.03); }
-
-.faq-chevron { font-size: 12px; color: #334155; transition: transform 0.25s; flex-shrink: 0; }
-.faq-item.open .faq-chevron { transform: rotate(180deg); }
+/* the chevron: hide the ▼ text and draw an arrow with borders instead */
+.faq-chevron {
+  position: relative; flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0;
+  transition: transform 0.25s, background 0.2s;
+}
+.faq-chevron::before {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px;
+  border-right: 2px solid var(--text-2); border-bottom: 2px solid var(--text-2);
+  transform: translate(-50%, -70%) rotate(45deg);
+}
+.faq-item.open .faq-chevron { transform: rotate(180deg); background: rgba(34, 211, 238, 0.14); }
 
 .faq-a {
-  display: none; padding: 0 22px 18px;
-  font-size: 14px; color: #64748b; line-height: 1.75;
-  border-top: 1px solid rgba(34,211,238,0.06);
-  padding-top: 14px;
+  display: none;
+  padding: 16px 22px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 15px; color: var(--text-2); line-height: 1.75;
 }
 .faq-item.open .faq-a { display: block; }
 
-/* ── CTA BANNER ── */
+/* ============================================================
+   10. CTA BANNER
+============================================================ */
+.cta-section { padding-top: 0; }
 .cta-banner {
-  margin: 0 24px 96px;
-  max-width: 1052px;
-  margin-left: auto; margin-right: auto;
-  border-radius: 20px;
-  border: 1px solid rgba(34,211,238,0.15);
-  background: rgba(10,15,35,0.8);
-  backdrop-filter: blur(16px);
-  padding: 56px 48px;
-  text-align: center;
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; text-align: center;
+  padding: var(--s8) var(--s6);
+  border-radius: 28px; border: 1px solid var(--line-cyan);
+  background: linear-gradient(160deg, rgba(34,211,238,0.12), rgba(13,20,42,0.92) 45%, rgba(245,158,11,0.09));
 }
-
 .cta-glow {
-  position: absolute; width: 400px; height: 400px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%);
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
-  pointer-events: none;
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 460px; height: 460px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.10) 0%, transparent 70%);
 }
+.cta-banner > *:not(.cta-glow) { position: relative; }
+.cta-banner h2 { font-size: clamp(28px, 4.4vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: #fff; margin-bottom: var(--s3); }
+.cta-banner h2 span { color: var(--cyan); }
+.cta-banner p  { font-size: 16px; color: var(--text-2); max-width: 460px; margin: 0 auto var(--s6); }
 
-.cta-banner h2 { font-size: clamp(24px, 4vw, 40px); font-weight: 800; color: #fff; margin-bottom: 14px; }
-.cta-banner h2 span { color: #22d3ee; }
-.cta-banner p  { font-size: 15px; color: #475569; margin-bottom: 28px; }
-.cta-banner .btn-hero-primary { display: inline-block; }
-
-/* ── FOOTER ── */
+/* ============================================================
+   11. FOOTER
+============================================================ */
 footer {
   position: relative; z-index: 2;
-  border-top: 1px solid rgba(34,211,238,0.08);
-  padding: 40px 48px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 20px;
+  border-top: 1px solid var(--line);
+  background: rgba(5, 8, 20, 0.75);
+}
+.footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s5); padding-top: var(--s6); padding-bottom: var(--s6); }
+.footer-logo { display: flex; align-items: center; gap: 10px; }
+.footer-logo img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.3)); }
+.footer-links { display: flex; gap: var(--s5); flex-wrap: wrap; }
+.footer-link { font-size: 14px; color: var(--text-2); transition: color 0.2s; }
+.footer-link:hover { color: var(--cyan); }
+.footer-copy { font-size: 12.5px; color: var(--text-3); }
+
+/* ============================================================
+   12. SCROLL PROGRESS TRACKER (glowing dot on a wiggly line)
+   Drawn by the second script at the bottom of the page.
+============================================================ */
+#scroll-path-svg {
+  position: fixed; right: 14px; top: 0;
+  width: 28px; height: 100vh;
+  z-index: 30; pointer-events: none; overflow: visible;
 }
 
-.footer-logo { display: flex; align-items: center; gap: 10px; }
-.footer-logo img { width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 0 4px rgba(34,211,238,0.3)); }
-.footer-logo-text { line-height: 1.1; }
-.footer-logo-text .the  { font-size: 8px;  letter-spacing: 3px; color: #f59e0b; text-transform: uppercase; }
-.footer-logo-text .main { font-size: 13px; font-weight: 800; color: #fff; }
-.footer-logo-text .cat  { font-size: 9px;  letter-spacing: 3px; color: #22d3ee; text-transform: uppercase; }
+/* ============================================================
+   13. RESPONSIVE
+============================================================ */
+/* the tracker sits at the right edge, so keep side padding wide enough to clear it */
+@media (min-width: 481px) and (max-width: 1240px) { :root { --gutter: 40px; } }
 
-.footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
-.footer-link { font-size: 13px; color: #334155; cursor: pointer; transition: color 0.2s; text-decoration: none; }
-.footer-link:hover { color: #22d3ee; }
+@media (max-width: 1024px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .courses-grid  { grid-template-columns: repeat(2, 1fr); }
+}
 
-.footer-copy { font-size: 12px; color: #1e2a3a; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  nav { padding: 14px 20px; }
+@media (max-width: 900px) {
   .nav-links { display: none; }
-  .teacher-wrap { grid-template-columns: 1fr; }
-  .teacher-photo, .teacher-illustration { max-width: 220px; aspect-ratio: 1; }
-  footer { padding: 32px 20px; flex-direction: column; align-items: flex-start; gap: 16px; }
-  .cta-banner { padding: 36px 24px; }
+  .hero-grid { grid-template-columns: 1fr; gap: var(--s6); text-align: center; }
+  .hero-sub { margin-left: auto; margin-right: auto; }
+  .hero-btns { justify-content: center; }
+  .hero-visual { max-width: 220px; }
+  .teacher-wrap { grid-template-columns: 1fr; gap: var(--s6); }
+  .teacher-photo-wrap { max-width: 260px; }
+}
+
+@media (max-width: 640px) {
+  .section { padding: var(--s8) 0; }
+  .section-head { margin-bottom: var(--s6); }
+  .features-grid, .courses-grid { grid-template-columns: 1fr; }
+  .teacher-quals { grid-template-columns: 1fr; }
+  .hero-btns .btn { width: 100%; max-width: 360px; }
+  /* stats become a 2 x 2 grid */
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .hero-stat:nth-child(odd)  { border-left: 0; }
+  .hero-stat:nth-child(n+3)  { border-top: 1px solid var(--line); }
+  .cta-banner { padding: 48px 22px; }
+  .footer-inner { flex-direction: column; align-items: flex-start; gap: var(--s4); }
+}
+
+@media (max-width: 480px) {
+  :root { --gutter: 16px; --nav-h: 60px; }
+  #scroll-path-svg { display: none; }   /* too cramped on phones */
+}
+
+@media (max-width: 400px) {
+  /* "Get started" and "Sign in" go to the same page, so keep just one on tiny screens */
+  .nav-cta-row .btn-secondary { display: none; }
+}
+
+/* respect phones/computers set to "reduce motion" */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 </style>
 </head>
 <body>
 
+<!-- particle background (script at the bottom draws on it) -->
 <canvas id="c"></canvas>
 
-<!-- NAV -->
+<!-- ── NAV ── -->
 <nav id="main-nav">
-  <a class="nav-logo" href="index.html">
-    <img src="logo.png" alt="The Math Catalyst" />
-    <div class="nav-logo-text">
-      <div class="the">The</div>
-      <div class="main">MATH</div>
-      <div class="cat">Catalyst</div>
+  <div class="container nav-inner">
+    <a class="nav-logo" href="index.html">
+      <img src="logo.png" alt="The Math Catalyst" />
+      <div class="logo-text">
+        <span class="the">The</span>
+        <span class="main">MATH</span>
+        <span class="cat">Catalyst</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="#features">Features</a>
+      <a class="nav-link" href="#courses">Courses</a>
+      <a class="nav-link" href="#teacher">Teacher</a>
+      <a class="nav-link" href="#faq">FAQ</a>
     </div>
-  </a>
-  <div class="nav-links">
-    <a class="nav-link" href="#features">Features</a>
-    <a class="nav-link" href="#courses">Courses</a>
-    <a class="nav-link" href="#teacher">Teacher</a>
-    <a class="nav-link" href="#faq">FAQ</a>
-  </div>
-  <div class="nav-cta-row">
-    <button class="nav-signin" onclick="location.href='login.html'">Sign in</button>
-    <button class="nav-start"  onclick="location.href='login.html'">Get started</button>
+    <div class="nav-cta-row">
+      <button class="btn btn-secondary btn-sm" onclick="location.href='login.html'">Sign in</button>
+      <button class="btn btn-primary btn-sm" onclick="location.href='login.html'">Get started</button>
+    </div>
   </div>
 </nav>
 
+<main>
+
 <!-- ── HERO ── -->
-<section>
-  <div class="hero">
-    <div class="hero-eyebrow">✦ Bangladesh's structured math platform</div>
-    <h1>
-      Ignite <span class="cyan">thinking.</span><br>
-      Solve <span class="orange">anything.</span>
-    </h1>
-    <p class="hero-sub">
-      Structured math lessons for Class 9, 10 & HSC. Learn at your own pace,
-      buy once, keep forever. No subscriptions.
-    </p>
-    <div class="hero-btns">
-      <button class="btn-hero-primary" onclick="location.href='login.html'">Start learning →</button>
-      <button class="btn-hero-secondary" onclick="location.href='courses.html'">Browse courses</button>
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+
+      <div class="hero-copy">
+        <div class="hero-eyebrow"><span class="dot"></span>Bangladesh's structured math platform</div>
+        <h1>
+          Ignite <span class="cyan">thinking.</span><br>
+          Solve <span class="orange">anything.</span>
+        </h1>
+        <p class="hero-sub">
+          Structured math lessons for Class 9, 10 & HSC. Learn at your own pace,
+          buy once, keep forever. No subscriptions.
+        </p>
+        <div class="hero-btns">
+          <button class="btn btn-primary btn-lg" onclick="location.href='login.html'">Start learning →</button>
+          <button class="btn btn-secondary btn-lg" onclick="location.href='courses.html'">Browse courses</button>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <!--
+          HERO PICTURE:
+          Put the teacher's photo in the project folder named "teacher.jpg"
+          (the same file the Teacher section uses). It shows here automatically.
+          Until then, the stick-figure illustration is shown instead.
+        -->
+        <img
+          class="hero-photo"
+          src="teacher.jpg"
+          alt="Al Mamun — Math Teacher"
+          id="hero-photo"
+          onerror="this.style.display='none'; document.getElementById('hero-illus').style.display='flex';"
+        />
+        <div class="hero-illus" id="hero-illus" style="display:none">
+          <div class="teacher-glow"></div>
+          <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="170">
+            <circle cx="100" cy="72" r="38" fill="#0a1628" stroke="#22d3ee" stroke-width="1" stroke-opacity="0.4"/>
+            <circle cx="88"  cy="68" r="4" fill="#22d3ee" opacity="0.5"/>
+            <circle cx="112" cy="68" r="4" fill="#22d3ee" opacity="0.5"/>
+            <path d="M88 84 Q100 94 112 84" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round"/>
+            <rect x="68" y="118" width="64" height="80" rx="10" fill="#0a1628" stroke="#22d3ee" stroke-width="1" stroke-opacity="0.3"/>
+            <line x1="100" y1="120" x2="100" y2="195" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.35"/>
+            <line x1="68"  y1="135" x2="40" y2="170" stroke="#22d3ee" stroke-width="8" stroke-opacity="0.15" stroke-linecap="round"/>
+            <line x1="132" y1="135" x2="160" y2="170" stroke="#22d3ee" stroke-width="8" stroke-opacity="0.15" stroke-linecap="round"/>
+            <rect x="30" y="150" width="40" height="28" rx="4" fill="#0a2a1a" stroke="#34d399" stroke-width="0.8" stroke-opacity="0.5"/>
+            <text x="50" y="168" text-anchor="middle" font-size="9" fill="#34d399" opacity="0.7" font-family="monospace">x²+y²</text>
+            <text x="148" y="90"  font-size="11" fill="#f59e0b" opacity="0.4" font-family="monospace">∫dx</text>
+            <text x="20"  y="110" font-size="10" fill="#22d3ee" opacity="0.35" font-family="monospace">π</text>
+            <text x="155" y="140" font-size="9"  fill="#818cf8" opacity="0.35" font-family="monospace">Σn</text>
+            <text x="18"  y="60"  font-size="9"  fill="#34d399" opacity="0.3" font-family="monospace">sin θ</text>
+          </svg>
+        </div>
+      </div>
+
     </div>
+
     <div class="hero-stats">
       <div class="hero-stat"><div class="val">4</div><div class="lbl">Courses</div></div>
       <div class="hero-stat"><div class="val">192+</div><div class="lbl">Video lessons</div></div>
-      <div class="hero-stat"><div class="val">♾️</div><div class="lbl">Permanent access</div></div>
+      <div class="hero-stat"><div class="val">∞</div><div class="lbl">Permanent access</div></div>
       <div class="hero-stat"><div class="val">bKash</div><div class="lbl">Easy payment</div></div>
     </div>
   </div>
 </section>
 
 <!-- ── FEATURES ── -->
-<section id="features">
-  <div class="section-inner">
-    <div class="section-label">Why Math Catalyst</div>
-    <div class="section-title">Everything you need to<br>master math</div>
-    <p class="section-sub">Built specifically for Bangladeshi students. No fluff, no distractions — just clear, structured lessons.</p>
+<section id="features" class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label">Why Math Catalyst</div>
+      <h2 class="section-title">Everything you need to<br>master math</h2>
+      <p class="section-sub">Built specifically for Bangladeshi students. No fluff, no distractions — just clear, structured lessons.</p>
+    </div>
 
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(34,211,238,0.08)">📹</div>
+        <div class="feature-icon ic-cyan">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></svg>
+        </div>
         <h3>Recorded video lessons</h3>
         <p>Watch at your own pace, pause, rewind, re-watch as many times as you need. No live schedule pressure.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(245,158,11,0.08)">♾️</div>
+        <div class="feature-icon ic-gold">
+          <svg viewBox="0 0 24 24"><path d="M12 12c-2-2.5-4-4-6-4a4 4 0 000 8c2 0 4-1.5 6-4zm0 0c2 2.5 4 4 6 4a4 4 0 000-8c-2 0-4 1.5-6 4z"/></svg>
+        </div>
         <h3>Buy once, keep forever</h3>
         <p>One payment, lifetime access. No monthly subscriptions. Your course stays with you even after your exams.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(129,140,248,0.08)">📚</div>
+        <div class="feature-icon ic-violet">
+          <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v16H6.5A2.5 2.5 0 004 21.5v-16z"/><path d="M4 18.5A2.5 2.5 0 016.5 16H20"/></svg>
+        </div>
         <h3>Structured by chapter</h3>
         <p>Lessons are organized exactly by your textbook syllabus. Find what you need instantly, never feel lost.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(52,211,153,0.08)">📊</div>
+        <div class="feature-icon ic-green">
+          <svg viewBox="0 0 24 24"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.25" y="6" width="3.5" height="12" rx="1"/><rect x="15.5" y="13" width="3.5" height="5" rx="1"/></svg>
+        </div>
         <h3>Track your progress</h3>
         <p>Mark lessons as watched and watch your progress bar grow. Know exactly where you are in every course.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(239,68,68,0.08)">💳</div>
+        <div class="feature-icon ic-pink">
+          <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18"/><path d="M7 15h3"/></svg>
+        </div>
         <h3>Pay with bKash</h3>
         <p>Simple, familiar payment via bKash. No credit card needed. Submit your transaction ID and get access.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(34,211,238,0.08)">🔓</div>
+        <div class="feature-icon ic-cyan">
+          <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 017.5-2"/></svg>
+        </div>
         <h3>Free preview lessons</h3>
         <p>Watch the first few lessons of every course for free before you buy. No commitment needed to try.</p>
       </div>
@@ -458,23 +687,26 @@ footer {
 </section>
 
 <!-- ── COURSES ── -->
-<section id="courses">
-  <div class="section-inner">
-    <div class="section-label">Courses</div>
-    <div class="section-title">Pick your class,<br>start today</div>
-    <p class="section-sub">All courses follow the Bangladesh national curriculum. Class 9 & 10 for SSC, and both years of HSC.</p>
+<section id="courses" class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label">Courses</div>
+      <h2 class="section-title">Pick your class,<br>start today</h2>
+      <p class="section-sub">All courses follow the Bangladesh national curriculum. Class 9 & 10 for SSC, and both years of HSC.</p>
+    </div>
 
+    <!-- cards are filled in by the script (see the "courses" array below) -->
     <div class="courses-grid" id="home-courses-grid"></div>
 
-    <div style="text-align:center;margin-top:32px">
-      <button class="btn-hero-secondary" onclick="location.href='courses.html'">View all courses →</button>
+    <div class="center-btn">
+      <button class="btn btn-secondary" onclick="location.href='courses.html'">View all courses →</button>
     </div>
   </div>
 </section>
 
 <!-- ── TEACHER ── -->
-<section id="teacher">
-  <div class="section-inner">
+<section id="teacher" class="section section-alt">
+  <div class="container">
     <div class="teacher-wrap">
 
       <div class="teacher-photo-wrap">
@@ -532,10 +764,10 @@ footer {
           into clear, logical steps that actually stick.
         </p>
         <div class="teacher-quals">
-          <div class="qual"><div class="qual-dot"></div>Specialist in SSC & HSC mathematics</div>
-          <div class="qual"><div class="qual-dot"></div>Years of classroom teaching experience</div>
-          <div class="qual"><div class="qual-dot"></div>Hundreds of students improved their results</div>
-          <div class="qual"><div class="qual-dot"></div>Explains concepts, not just formulas</div>
+          <div class="qual"><span class="qual-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Specialist in SSC & HSC mathematics</div>
+          <div class="qual"><span class="qual-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Years of classroom teaching experience</div>
+          <div class="qual"><span class="qual-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Hundreds of students improved their results</div>
+          <div class="qual"><span class="qual-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Explains concepts, not just formulas</div>
         </div>
         <div class="teacher-quote">
           "Mathematics is not about memorizing formulas — it's about training your mind to think logically.
@@ -548,43 +780,50 @@ footer {
 </section>
 
 <!-- ── FAQ ── -->
-<section id="faq">
-  <div class="section-inner">
-    <div class="section-label">FAQ</div>
-    <div class="section-title">Common questions</div>
+<section id="faq" class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title">Common questions</h2>
+    </div>
 
+    <!-- items are filled in by the script (see the "faqs" array below) -->
     <div class="faq-list" id="faq-list"></div>
   </div>
 </section>
 
 <!-- ── CTA BANNER ── -->
-<section>
-  <div class="section-inner" style="padding-top:0;padding-bottom:96px">
+<section class="section cta-section">
+  <div class="container">
     <div class="cta-banner">
       <div class="cta-glow"></div>
       <h2>Ready to <span>solve anything?</span></h2>
       <p>Join students already mastering math with structured, permanent-access lessons.</p>
-      <button class="btn-hero-primary" onclick="location.href='login.html'">Create free account →</button>
+      <button class="btn btn-primary btn-lg" onclick="location.href='login.html'">Create free account →</button>
     </div>
   </div>
 </section>
 
-<!-- FOOTER -->
+</main>
+
+<!-- ── FOOTER ── -->
 <footer>
-  <div class="footer-logo">
-    <img src="logo.png" alt="logo" />
-    <div class="footer-logo-text">
-      <div class="the">The</div>
-      <div class="main">MATH</div>
-      <div class="cat">Catalyst</div>
+  <div class="container footer-inner">
+    <div class="footer-logo">
+      <img src="logo.png" alt="logo" />
+      <div class="logo-text">
+        <span class="the">The</span>
+        <span class="main">MATH</span>
+        <span class="cat">Catalyst</span>
+      </div>
     </div>
+    <div class="footer-links">
+      <a class="footer-link" href="courses.html">Courses</a>
+      <a class="footer-link" href="login.html">Sign in</a>
+      <a class="footer-link" href="login.html">Register</a>
+    </div>
+    <div class="footer-copy">© 2026 The Math Catalyst · Ignite thinking. Solve anything.</div>
   </div>
-  <div class="footer-links">
-    <a class="footer-link" href="courses.html">Courses</a>
-    <a class="footer-link" href="login.html">Sign in</a>
-    <a class="footer-link" href="login.html">Register</a>
-  </div>
-  <div class="footer-copy">© 2026 The Math Catalyst · Ignite thinking. Solve anything.</div>
 </footer>
 
 <script>
@@ -692,24 +931,6 @@ draw();
 </script>
 
 <!-- ── SCROLL PATH TRACKER ── -->
-<style>
-#scroll-path-svg {
-  position: fixed;
-  right: 18px;
-  top: 0;
-  width: 28px;
-  height: 100vh;
-  z-index: 30;
-  pointer-events: none;
-  overflow: visible;
-}
-
-/* hide on very small screens */
-@media (max-width: 480px) {
-  #scroll-path-svg { display: none; }
-}
-</style>
-
 <svg id="scroll-path-svg" viewBox="0 0 28 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- glow filter for the dot -->
@@ -744,7 +965,7 @@ draw();
   <circle id="scroll-dot" cx="14" cy="0" r="4" fill="#22d3ee" filter="url(#dot-glow)" opacity="0.95"/>
   <!-- inner bright core -->
   <circle id="scroll-dot-core" cx="14" cy="0" r="1.8" fill="#fff" opacity="0.9"/>
-</style>
+</svg>
 
 <script>
 (function() {
