@@ -9,11 +9,18 @@
 async function getMyEnrollmentIds() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return { owned: [], pending: [] };
-  const { data } = await sb.from('enrollments')
-    .select('course_id,status')
-    .eq('user_id', session.user.id)
-    .in('status', ['approved', 'pending']);
-  const rows = data || [];
+  const [enr, prof] = await Promise.all([
+    sb.from('enrollments').select('course_id,status')
+      .eq('user_id', session.user.id).in('status', ['approved', 'pending']),
+    sb.from('profiles').select('banned').eq('id', session.user.id).maybeSingle()
+  ]);
+  // suspended account: sign out and go to the login page
+  if (prof.data && prof.data.banned) {
+    await sb.auth.signOut();
+    location.href = 'login.html?banned=1';
+    return { owned: [], pending: [] };
+  }
+  const rows = enr.data || [];
   return {
     owned: rows.filter(r => r.status === 'approved').map(r => r.course_id),
     pending: rows.filter(r => r.status === 'pending').map(r => r.course_id)
@@ -81,4 +88,10 @@ async function fetchYoutubeId(videoId) {
   const { data } = await sb.from('video_sources')
     .select('youtube_id').eq('video_id', videoId).maybeSingle();
   return data ? data.youtube_id : '';
+}
+
+/* sign the student out and go back to the login page */
+async function signOut() {
+  await sb.auth.signOut();
+  location.href = 'login.html';
 }

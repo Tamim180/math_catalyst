@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home — The Math Catalyst</title>
+<meta name="theme-color" content="#050814" />
+<!-- Font: Plus Jakarta Sans (phone falls back to its system font if it cannot load) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   SHARED DESIGN LANGUAGE (same block on every page)
+   Change colours / rounding / spacing here to retheme the site.
+============================================================ */
+:root{
+  --bg:#050814; --surface:rgba(13,20,42,.78); --surface-2:rgba(21,31,60,.82);
+  --line:rgba(148,163,184,.16); --line-cyan:rgba(34,211,238,.30);
+  --text:#f1f5f9; --text-2:#b4c0d3; --text-3:#8a99b0;
+  --cyan:#22d3ee; --cyan-deep:#0891b2; --gold:#f59e0b; --gold-soft:#fbbf24;
+  --green:#34d399; --violet:#818cf8; --pink:#ff6ba0; --red:#f87171;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:72px;
+  --container:1120px; --gutter:20px; --nav-h:64px;
+  --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text-2);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+canvas{position:fixed;inset:0;z-index:0}   /* particle background drawn by the page script */
+a{color:inherit;text-decoration:none} button{font-family:inherit} img{max-width:100%}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+
+/* ---- top bar ---- */
+nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:var(--s4);min-height:var(--nav-h);
+  padding:8px max(var(--gutter),calc((100vw - var(--container))/2 + var(--gutter)));
+  background:rgba(5,8,20,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.nav-logo img{width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(34,211,238,.35))}
+.nav-logo-text,.logo-text{line-height:1.05}
+.nav-logo-text .the,.logo-text .the{display:block;font-size:9px;font-weight:600;letter-spacing:.3em;color:var(--gold);text-transform:uppercase}
+.nav-logo-text .main,.logo-text .main{display:block;font-size:16px;font-weight:800;letter-spacing:.06em;color:#fff}
+.nav-logo-text .cat,.logo-text .cat,.logo-text .catalyst{display:block;font-size:10px;font-weight:600;letter-spacing:.3em;color:var(--cyan);text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-btn,.nav-back{min-height:40px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;transition:.2s}
+.nav-btn:hover,.nav-back:hover{border-color:var(--line-cyan);background:rgba(34,211,238,.08);color:var(--cyan)}
+
+/* ---- primary buttons ---- */
+.btn,.btn-primary,.enroll-btn,.save-btn,.submit-btn,.gate-btn,.mobile-enroll,.browse-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 22px;border:0;border-radius:var(--r-md);
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-deep));color:#031018;font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 6px 22px rgba(34,211,238,.22);transition:transform .2s,box-shadow .2s}
+.btn:hover,.btn-primary:hover,.enroll-btn:hover,.save-btn:hover,.submit-btn:hover,.gate-btn:hover,.mobile-enroll:hover,.browse-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(34,211,238,.35)}
+.enroll-btn.owned{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.3);box-shadow:none;cursor:default}
+.enroll-btn.owned:hover{transform:none}
+
+/* ---- form fields ---- */
+.field,.m-field{margin-bottom:var(--s4)}
+.field label,.m-field label{display:block;margin-bottom:6px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.field input,.field select,.field textarea,.m-field input,.m-field select,.m-field textarea,.gate-input,.search-box,.price-input{
+  width:100%;min-height:46px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(10,16,34,.9);
+  color:var(--text);font:inherit;font-size:16px;outline:none;resize:none;transition:border-color .2s,box-shadow .2s}
+.field input::placeholder,.field textarea::placeholder,.m-field input::placeholder,.m-field textarea::placeholder,.gate-input::placeholder{color:var(--text-3);opacity:.6}
+.field input:focus,.field select:focus,.field textarea:focus,.m-field input:focus,.m-field select:focus,.m-field textarea:focus,.gate-input:focus,.search-box:focus,.price-input:focus{border-color:var(--line-cyan);box-shadow:0 0 0 3px rgba(34,211,238,.10)}
+.field select option,.m-field select option{background:#0a1024}
+
+/* ---- cards ---- */
+.section-card,.profile-card,.sidebar-card,.summary-card,.chapter,.course-card,.stat-card,.table-wrap,.course-admin-card,.enrolled-course,.gate-card,.success-box{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
+
+/* ---- pop-up window ---- */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.82);backdrop-filter:blur(6px)}
+.modal-overlay.open{display:flex}
+.modal-box{width:100%;max-width:500px;max-height:100%;overflow:hidden;border-radius:var(--r-lg);background:#0a1024;border:1px solid var(--line-cyan);box-shadow:0 0 80px rgba(34,211,238,.10)}
+.modal-close{flex-shrink:0;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text-2);font-size:15px;cursor:pointer;transition:.2s}
+.modal-close:hover{background:rgba(34,211,238,.12);color:#fff}
+
+@media(max-width:640px){:root{--gutter:16px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+
+/* ============ SHARED NAV (Home · Courses · Profile · Sign out) ============
+   Uses the shared `nav` rule and the .nav-logo rules that every page already has.
+   The old .nav-right / .nav-btn / .nav-back / .nav-user rules are no longer used.
+================================================================ */
+.mc-links{display:flex;align-items:center;gap:4px;min-width:0;overflow-x:auto}
+.mc-link{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:12px;border:1px solid transparent;background:none;
+  font:inherit;font-size:14px;font-weight:600;color:var(--text-2);white-space:nowrap;cursor:pointer;transition:.2s}
+.mc-link:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.mc-link.active{color:var(--cyan);background:rgba(34,211,238,.10);border-color:rgba(34,211,238,.22)}
+.mc-signout{margin-left:6px;border-color:var(--line);color:var(--text-3)}
+.mc-signout:hover{color:var(--red);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
+@media(max-width:640px){
+  nav{gap:8px}
+  nav .nav-logo-text{display:none}          /* phones: logo icon only, so all 4 links fit */
+  .mc-link{padding:0 10px;font-size:13px}
+  .mc-signout{margin-left:2px}
+}
+@media(max-width:360px){.mc-link{padding:0 8px;font-size:12.5px}}
+@media(max-width:340px){.mc-link{padding:0 6px;font-size:12px}}
+
+/* ============ HOME PAGE ============ */
+main{position:relative;z-index:2;max-width:var(--container);margin:0 auto;padding:var(--s6) var(--gutter) var(--s8)}
+.loading{padding:80px 0;text-align:center;color:var(--text-3)}
+.greet{margin-bottom:var(--s5)}
+.greet h1{margin-bottom:6px;font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.greet h1 span{color:var(--cyan)}
+.greet p{font-size:16px}
+/* stats + quick links: 4 tiles */
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3);margin-bottom:var(--s6)}
+.q-card{padding:16px 18px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line)}
+.q-stat .val{font-size:28px;font-weight:800;line-height:1.2;color:var(--gold)}
+.q-stat .lbl{font-size:13px;color:var(--text-3)}
+a.q-link{display:flex;flex-direction:column;justify-content:center;gap:2px;transition:.2s}
+a.q-link:hover{transform:translateY(-2px);border-color:var(--line-cyan);background:var(--surface-2)}
+.q-link strong{font-size:16px;color:var(--text)} .q-link span{font-size:13px;color:var(--cyan)}
+/* pending payment notice */
+.notice{display:flex;align-items:flex-start;gap:12px;margin-bottom:var(--s6);padding:14px 18px;border-radius:var(--r-md);background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.28)}
+.notice-icon{font-size:20px;line-height:1.4}
+.notice strong{display:block;font-size:15px;color:var(--gold-soft)}
+.notice p{font-size:14px;color:var(--text-2)}
+/* section headings */
+.sec{margin-bottom:var(--s7)}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s4)}
+.sec-head h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.sec-head a{font-size:14px;font-weight:600;color:var(--cyan)}
+.sec-head a:hover{text-decoration:underline}
+/* tags + price (same look as courses.html) */
+.card-tag{align-self:flex-start;display:inline-block;padding:3px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.tag-secondary{background:rgba(129,140,248,.12);color:var(--violet);border:1px solid rgba(129,140,248,.25)}
+.tag-hsc{background:rgba(245,158,11,.10);color:var(--gold);border:1px solid rgba(245,158,11,.25)}
+.tag-ssc{background:rgba(34,211,238,.08);color:var(--cyan);border:1px solid rgba(34,211,238,.22)}
+.price{font-size:20px;font-weight:800;color:var(--gold)}
+.price .currency{margin-right:1px;font-size:14px;font-weight:600}
+.price .tbd{font-size:14px;font-weight:600;color:var(--text-3)}
+.enroll-btn{min-height:40px;padding:0 18px;font-size:14px}
+/* progress bar (same look as profile.html) */
+.progress-header{display:flex;justify-content:space-between;margin-bottom:6px}
+.progress-label{font-size:13px;color:var(--text-3)} .progress-pct{font-size:13px;font-weight:700;color:var(--cyan)}
+.progress-bar-bg{width:100%;height:8px;border-radius:4px;background:rgba(34,211,238,.10);overflow:hidden}
+.progress-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--cyan-deep))}
+/* thumbnails */
+.hc-thumb,.resume-thumb{position:relative;overflow:hidden}
+.hc-thumb{height:96px}
+.hc-thumb svg,.resume-thumb svg{position:absolute;inset:0;width:100%;height:100%}
+.hc-thumb::before,.resume-thumb::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:24px 24px;-webkit-mask-image:linear-gradient(180deg,#000,transparent 90%);mask-image:linear-gradient(180deg,#000,transparent 90%)}
+/* continue learning card */
+.resume{display:grid;grid-template-columns:260px 1fr;overflow:hidden;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line-cyan);box-shadow:0 0 50px rgba(34,211,238,.07)}
+.resume-thumb{min-height:190px}
+.resume-body{display:flex;flex-direction:column;justify-content:center;gap:var(--s3);padding:var(--s5)}
+.resume-title{font-size:clamp(22px,3vw,28px);font-weight:800;line-height:1.2;letter-spacing:-.01em;color:var(--text)}
+.resume-sub{font-size:15px}
+.resume-actions{margin-top:var(--s2)}
+/* course cards (my courses + explore) */
+.hc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:var(--s4)}
+.hc-grid.small{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.hc-card{display:flex;flex-direction:column;overflow:hidden;cursor:pointer;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);transition:transform .25s,border-color .25s,box-shadow .25s}
+.hc-card:hover{transform:translateY(-4px);border-color:var(--line-cyan);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.hc-body{display:flex;flex-direction:column;flex:1;gap:var(--s2);padding:16px 18px 18px}
+.hc-card.mini{gap:var(--s2);padding:16px 18px 18px}
+.hc-title{font-size:17px;font-weight:700;line-height:1.25;letter-spacing:-.01em;color:var(--text)}
+.hc-meta{font-size:13px;color:var(--text-3)}
+.hc-go{align-self:flex-start;min-height:40px;margin-top:var(--s2);padding:0 18px;font-size:14px}
+.hc-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-top:auto;padding-top:var(--s4);border-top:1px solid var(--line)}
+.mini .hc-meta{margin-bottom:var(--s2)}
+.empty-note{padding:var(--s6) 0;text-align:center;color:var(--text-3)}
+@media(max-width:860px){
+  .resume{grid-template-columns:1fr}
+  .resume-thumb{min-height:110px}
+}
+@media(max-width:640px){
+  main{padding-top:var(--s5)}
+  .quick{grid-template-columns:repeat(2,1fr)}
+  .resume-body{padding:var(--s4)}
+  .resume-actions .btn{width:100%}
+}
+.hc-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;line-height:1.55}
+.enroll-btn.pending{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.3);box-shadow:none;cursor:default;white-space:nowrap}
+.enroll-btn.pending:hover{transform:none}
+.resume-sub strong{color:var(--text);font-weight:600}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- NAV (shared on every logged-in page; see nav-snippet.html) -->
+<nav>
+  <a class="nav-logo" href="home.html">
+    <img src="logo.png" alt="The Math Catalyst" />
+    <div class="nav-logo-text">
+      <div class="the">The</div>
+      <div class="main">MATH</div>
+      <div class="cat">Catalyst</div>
+    </div>
+  </a>
+  <div class="mc-links">
+    <a class="mc-link active" aria-current="page" href="home.html">Home</a>
+    <a class="mc-link" href="courses.html">Courses</a>
+    <a class="mc-link" href="profile.html">Profile</a>
+    <button class="mc-link mc-signout" onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+
+<main>
+  <div id="home"><p class="loading">Loading your dashboard…</p></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="data.js"></script>
+<script type="module">
+/* ============================================================
+   MOCK DATA  (the only part that needs wiring to Supabase)
+   Keep these object shapes and the page below keeps working.
+============================================================ */
+
+/* ── LOAD REAL DATA FROM SUPABASE ── */
+
+/* must be logged in */
+const { data: { session } } = await sb.auth.getSession();
+if (!session) { location.replace('login.html'); throw new Error('Not logged in'); }
+const user = session.user;
+
+const { data: prof } = await sb.from('profiles').select('full_name,last_video_id').eq('id', user.id).maybeSingle();
+const student = { name: (prof && prof.full_name) || user.email.split('@')[0] };
+
+/* all published courses (data.js), marked owned / pending for this student */
+const allCourses = await fetchCourses();
+const ownedList = allCourses.filter(c => c.owned);
+
+/* how many videos of each owned course were watched */
+const watchedByCourse = {};
+if (ownedList.length) {
+  const [chRes, wpRes] = await Promise.all([
+    sb.from('chapters').select('course_id, videos(id)').in('course_id', ownedList.map(c => c.id)),
+    sb.from('watch_progress').select('video_id').eq('user_id', user.id).eq('watched', true)
+  ]);
+  const courseOfVideo = {};
+  (chRes.data || []).forEach(ch => ch.videos.forEach(v => { courseOfVideo[v.id] = ch.course_id; }));
+  (wpRes.data || []).forEach(r => {
+    const cid = courseOfVideo[r.video_id];
+    if (cid) watchedByCourse[cid] = (watchedByCourse[cid] || 0) + 1;
+  });
+}
+
+const myCourses = ownedList.map(c => {
+  const watched = watchedByCourse[c.id] || 0;
+  const hsc = c.tag === 'HSC';
+  return {
+    id: c.id, title: c.title, tag: c.tag,
+    tagColor: hsc ? '#f59e0b' : '#22d3ee',
+    tagBg: hsc ? 'rgba(245,158,11,0.08)' : 'rgba(34,211,238,0.08)',
+    totalVideos: c.videos, watched,
+    pct: c.videos ? Math.round(watched / c.videos * 100) : 0,
+    accentFrom: c.accentFrom, accentTo: c.accentTo
+  };
+});
+
+/* last video the student opened (only if it belongs to a course they own) */
+let lastWatched = null;
+if (prof && prof.last_video_id) {
+  const { data: lv } = await sb.from('videos').select('title, chapters(course_id)').eq('id', prof.last_video_id).maybeSingle();
+  const lastCourse = lv && lv.chapters ? myCourses.find(c => c.id === lv.chapters.course_id) : null;
+  if (lastCourse) lastWatched = { courseId: lastCourse.id, courseTitle: lastCourse.title, videoTitle: lv.title };
+}
+
+/* requests still waiting for the teacher */
+const { data: pendRows } = await sb.from('enrollments')
+  .select('created_at, courses(title)')
+  .eq('user_id', user.id).eq('status', 'pending')
+  .order('created_at', { ascending: false });
+const pendingRequests = (pendRows || []).map(r => ({
+  courseTitle: (r.courses && r.courses.title) || 'Course',
+  date: new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}));
+
+/* courses the student has not enrolled in yet */
+const otherCourses = allCourses.filter(c => !c.owned).map(c => ({
+  id: c.id, title: c.title, tag: c.tag, tagClass: c.tagClass, desc: c.desc, price: c.price,
+  chapters: c.chapters, videos: c.videos, accentFrom: c.accentFrom, accentTo: c.accentTo, pending: c.pending
+}));
+
+/* ============================================================
+   PAGE CODE (no changes needed when wiring)
+============================================================ */
+
+/* makes text safe to put inside HTML */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+
+const firstName = student.name.trim().split(/\s+/)[0];
+const totalWatched = myCourses.reduce((s, c) => s + (c.watched || 0), 0);
+const hour = new Date().getHours();
+const hello = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+/* "Continue learning" card: the last watched video's course, else the first course I own */
+const resumeCourse = lastWatched
+  ? (myCourses.find(c => c.id === lastWatched.courseId) || null)
+  : (myCourses[0] || null);
+
+document.getElementById('home').innerHTML = `
+  <div class="greet">
+    <h1>${hello}, <span>${esc(firstName)}</span></h1>
+    <p>${myCourses.length ? 'Ready to pick up where you left off?' : "Let's get you started: pick your first course."}</p>
+  </div>
+
+  <div class="quick">
+    <div class="q-card q-stat"><div class="val">${myCourses.length}</div><div class="lbl">Courses enrolled</div></div>
+    <div class="q-card q-stat"><div class="val">${totalWatched}</div><div class="lbl">Videos watched</div></div>
+    <a class="q-card q-link" href="profile.html"><strong>My profile</strong><span>Progress &amp; settings →</span></a>
+    <a class="q-card q-link" href="courses.html"><strong>All courses</strong><span>Browse everything →</span></a>
+  </div>
+
+  ${pendingRequests.length ? `
+  <div class="notice">
+    <div class="notice-icon">⏳</div>
+    <div>
+      <strong>Waiting for teacher approval</strong>
+      <p>${pendingRequests.map(r => `${esc(r.courseTitle)} (sent ${esc(r.date)})`).join(', ')}. Usually approved within a few hours.</p>
+    </div>
+  </div>` : ''}
+
+  <div class="sec">
+    <div class="sec-head"><h2>Continue learning</h2></div>
+    ${resumeCourse ? resumeCard(resumeCourse) : myCourses.length ? '' : emptyCard()}
+  </div>
+
+  ${myCourses.length ? `
+  <div class="sec">
+    <div class="sec-head"><h2>My courses</h2><a href="profile.html">Progress details →</a></div>
+    <div class="hc-grid">${myCourses.map(ownedCard).join('')}</div>
+  </div>` : ''}
+
+  ${otherCourses.length ? `
+  <div class="sec">
+    <div class="sec-head"><h2>More courses to explore</h2><a href="courses.html">See all →</a></div>
+    <div class="hc-grid small">${otherCourses.map(miniCard).join('')}</div>
+  </div>` : (myCourses.length ? '<div class="empty-note">You are enrolled in every available course. 🎉</div>' : '')}
+`;
+
+/* ── small building blocks ── */
+
+/* tag badge: courses from otherCourses have tagClass, courses from myCourses have tagColor/tagBg */
+function tagPill(c) {
+  if (c.tagClass) return `<span class="card-tag ${esc(c.tagClass)}">${esc(c.tag)}</span>`;
+  const col = c.tagColor || '#22d3ee';
+  return `<span class="card-tag" style="background:${esc(c.tagBg || 'rgba(34,211,238,0.08)')};color:${esc(col)};border:1px solid ${esc(col)}33">${esc(c.tag)}</span>`;
+}
+
+/* thumbnail colours: use the course's own, or pick by level */
+function thumbStyle(c) {
+  const from = c.accentFrom || (c.tag === 'HSC' ? '#2a1a05' : '#0a2a3a');
+  const to = c.accentTo || '#050814';
+  return `background:linear-gradient(135deg,${esc(from)},${esc(to)})`;
+}
+
+function thumbSVG(c) {
+  const col = c.tagColor || (c.tag === 'HSC' ? '#f59e0b' : '#22d3ee');
+  return `<svg viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="150" cy="65" r="50" fill="none" stroke="${esc(col)}" stroke-width="0.6" stroke-opacity="0.4" stroke-dasharray="4 6"/>
+    <circle cx="150" cy="65" r="30" fill="none" stroke="${esc(col)}" stroke-width="0.6" stroke-opacity="0.3" stroke-dasharray="3 5"/>
+    <text x="150" y="78" text-anchor="middle" font-size="40" font-weight="900" fill="${esc(col)}" opacity="0.3" font-family="monospace">${c.tag === 'HSC' ? '∫' : 'x²'}</text>
+  </svg>`;
+}
+
+function progressBar(c) {
+  return `
+    <div>
+      <div class="progress-header">
+        <span class="progress-label">${c.watched} of ${c.totalVideos} videos watched</span>
+        <span class="progress-pct">${c.pct}%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${c.pct}%"></div></div>
+    </div>`;
+}
+
+/* big "Continue learning" card */
+function resumeCard(c) {
+  const hasLast = lastWatched && lastWatched.courseId === c.id;
+  return `
+    <div class="resume">
+      <div class="resume-thumb" style="${thumbStyle(c)}">${thumbSVG(c)}</div>
+      <div class="resume-body">
+        ${tagPill(c)}
+        <div class="resume-title">${esc(c.title)}</div>
+        ${hasLast ? `<p class="resume-sub">Last watched: <strong>${esc(lastWatched.videoTitle)}</strong></p>` : ''}
+        ${progressBar(c)}
+        <div class="resume-actions">
+          <a class="btn" href="course.html?id=${c.id}">${hasLast ? 'Resume' : 'Start learning'} →</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* shown when the student owns no course yet */
+function emptyCard() {
+  return `
+    <div class="resume" style="grid-template-columns:1fr">
+      <div class="resume-body">
+        <div class="resume-title">You are not enrolled in a course yet</div>
+        <p class="resume-sub">Watch the free preview lessons first, then enroll when you are ready.</p>
+        <div class="resume-actions"><a class="btn" href="courses.html">Browse courses →</a></div>
+      </div>
+    </div>`;
+}
+
+/* course I own: thumbnail, progress bar, Go to course */
+function ownedCard(c) {
+  return `
+    <div class="hc-card" onclick="location.href='course.html?id=${c.id}'">
+      <div class="hc-thumb" style="${thumbStyle(c)}">${thumbSVG(c)}</div>
+      <div class="hc-body">
+        ${tagPill(c)}
+        <div class="hc-title">${esc(c.title)}</div>
+        ${progressBar(c)}
+        <a class="btn hc-go" href="course.html?id=${c.id}" onclick="event.stopPropagation()">Go to course →</a>
+      </div>
+    </div>`;
+}
+
+/* small card for a course I do not own yet */
+function miniCard(c) {
+  return `
+    <div class="hc-card mini" onclick="location.href='course.html?id=${c.id}'">
+      ${tagPill(c)}
+      <div class="hc-title">${esc(c.title)}</div>
+      <div class="hc-desc">${esc(c.desc)}</div>
+      <div class="hc-meta">${c.chapters} chapters · ${c.videos} videos</div>
+      <div class="hc-foot">
+        <div class="price">${c.price ? `<span class="currency">৳</span>${c.price}` : '<span class="tbd">Price TBD</span>'}</div>
+        ${c.pending
+          ? '<button class="enroll-btn pending" disabled>⏳ Request pending</button>'
+          : `<a class="enroll-btn" href="purchase.html?id=${c.id}" onclick="event.stopPropagation()">Enroll now</a>`}
+      </div>
+    </div>`;
+}
+</script>
+
+<script>
+/* ── ambient particles ── */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let w, h;
+function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+let mouse = {x:w/2,y:h/2}, ripples=[], t=0;
+document.addEventListener('mousemove', e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+document.addEventListener('click', e=>{for(let i=0;i<3;i++) ripples.push({x:e.clientX,y:e.clientY,r:i*15,speed:1.8+i*0.4});});
+document.addEventListener('touchmove', e=>{const t=e.touches[0];mouse.x=t.clientX;mouse.y=t.clientY;},{passive:true});
+document.addEventListener('touchstart', e=>{const touch=e.touches[0];mouse.x=touch.clientX;mouse.y=touch.clientY;for(let i=0;i<3;i++) ripples.push({x:touch.clientX,y:touch.clientY,r:i*15,speed:1.8+i*0.4});},{passive:true});
+function draw(){
+  ctx.fillStyle='rgba(5,8,20,0.13)';ctx.fillRect(0,0,w,h);t+=0.003;
+  const step=28;
+  for(let y=0;y<h;y+=step) for(let x=0;x<w;x+=step){
+    const dx=x-mouse.x,dy=y-mouse.y,dist=Math.sqrt(dx*dx+dy*dy);
+    const wave=Math.sin(dist*0.018-t*5),influence=Math.max(0,1-dist/380);
+    let ox=Math.sin(t+y*0.009)*7,oy=Math.cos(t+x*0.009)*7;
+    for(const r of ripples){const rx=x-r.x,ry=y-r.y,d=Math.sqrt(rx*rx+ry*ry),rw=Math.sin(d*0.045-r.r*0.18),rf=Math.max(0,1-d/280);ox+=rw*rf*10;oy+=rw*rf*10;}
+    const cr=x/w,rv=Math.round(34+cr*(245-34)),gv=Math.round(211+cr*(158-211)),bv=Math.round(238+cr*(11-238));
+    ctx.fillStyle=`rgba(${rv},${gv},${bv},${0.03+wave*0.04+influence*0.1})`;
+    ctx.fillRect(x+ox+wave*9,y+oy+wave*9,2,2);
+  }
+  ripples.forEach(r=>r.r+=r.speed);ripples=ripples.filter(r=>r.r<140);
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>

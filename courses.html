@@ -117,6 +117,26 @@ main{position:relative;z-index:2;max-width:var(--container);margin:0 auto;paddin
 @media(max-width:640px){.nav-user{display:none} main{padding-top:var(--s6)}}
 .enroll-btn.pending{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.3);box-shadow:none;cursor:default}
 .enroll-btn.pending:hover{transform:none}
+
+/* ============ SHARED NAV (Home · Courses · Profile · Sign out) ============
+   Uses the shared `nav` rule and the .nav-logo rules that every page already has.
+   The old .nav-right / .nav-btn / .nav-back / .nav-user rules are no longer used.
+================================================================ */
+.mc-links{display:flex;align-items:center;gap:4px;min-width:0;overflow-x:auto}
+.mc-link{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:12px;border:1px solid transparent;background:none;
+  font:inherit;font-size:14px;font-weight:600;color:var(--text-2);white-space:nowrap;cursor:pointer;transition:.2s}
+.mc-link:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.mc-link.active{color:var(--cyan);background:rgba(34,211,238,.10);border-color:rgba(34,211,238,.22)}
+.mc-signout{margin-left:6px;border-color:var(--line);color:var(--text-3)}
+.mc-signout:hover{color:var(--red);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
+@media(max-width:640px){
+  nav{gap:8px}
+  nav .nav-logo-text{display:none}          /* phones: logo icon only, so all 4 links fit */
+  .mc-link{padding:0 10px;font-size:13px}
+  .mc-signout{margin-left:2px}
+}
+@media(max-width:360px){.mc-link{padding:0 8px;font-size:12.5px}}
+@media(max-width:340px){.mc-link{padding:0 6px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -125,17 +145,19 @@ main{position:relative;z-index:2;max-width:var(--container);margin:0 auto;paddin
 
 <!-- NAV -->
 <nav>
-  <a class="nav-logo" href="index.html">
-    <img src="logo.png" alt="logo" />
+  <a class="nav-logo" href="home.html">
+    <img src="logo.png" alt="The Math Catalyst" />
     <div class="nav-logo-text">
       <div class="the">The</div>
       <div class="main">MATH</div>
       <div class="cat">Catalyst</div>
     </div>
   </a>
-  <div class="nav-right">
-    <div class="nav-user">Hi, <span id="nav-name">Student</span></div>
-    <button class="nav-btn" onclick="location.href='login.html'">Sign out</button>
+  <div class="mc-links">
+    <a class="mc-link" href="home.html">Home</a>
+    <a class="mc-link active" aria-current="page" href="courses.html">Courses</a>
+    <a class="mc-link" href="profile.html">Profile</a>
+    <button class="mc-link mc-signout" onclick="signOut()">Sign out</button>
   </div>
 </nav>
 

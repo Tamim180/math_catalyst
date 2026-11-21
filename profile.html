@@ -150,6 +150,26 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
   .row2{grid-template-columns:1fr}
   .ec-top{flex-direction:column}
 }
+
+/* ============ SHARED NAV (Home · Courses · Profile · Sign out) ============
+   Uses the shared `nav` rule and the .nav-logo rules that every page already has.
+   The old .nav-right / .nav-btn / .nav-back / .nav-user rules are no longer used.
+================================================================ */
+.mc-links{display:flex;align-items:center;gap:4px;min-width:0;overflow-x:auto}
+.mc-link{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:12px;border:1px solid transparent;background:none;
+  font:inherit;font-size:14px;font-weight:600;color:var(--text-2);white-space:nowrap;cursor:pointer;transition:.2s}
+.mc-link:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.mc-link.active{color:var(--cyan);background:rgba(34,211,238,.10);border-color:rgba(34,211,238,.22)}
+.mc-signout{margin-left:6px;border-color:var(--line);color:var(--text-3)}
+.mc-signout:hover{color:var(--red);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
+@media(max-width:640px){
+  nav{gap:8px}
+  nav .nav-logo-text{display:none}          /* phones: logo icon only, so all 4 links fit */
+  .mc-link{padding:0 10px;font-size:13px}
+  .mc-signout{margin-left:2px}
+}
+@media(max-width:360px){.mc-link{padding:0 8px;font-size:12.5px}}
+@media(max-width:340px){.mc-link{padding:0 6px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -157,17 +177,19 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
 <canvas id="c"></canvas>
 
 <nav>
-  <div class="nav-logo" onclick="location.href='courses.html'">
-    <img src="logo.png" alt="logo" />
+  <a class="nav-logo" href="home.html">
+    <img src="logo.png" alt="The Math Catalyst" />
     <div class="nav-logo-text">
       <div class="the">The</div>
       <div class="main">MATH</div>
       <div class="cat">Catalyst</div>
     </div>
-  </div>
-  <div class="nav-right">
-    <button class="nav-btn" onclick="location.href='courses.html'">← Courses</button>
-    <button class="nav-btn" onclick="location.href='login.html'">Sign out</button>
+  </a>
+  <div class="mc-links">
+    <a class="mc-link" href="home.html">Home</a>
+    <a class="mc-link" href="courses.html">Courses</a>
+    <a class="mc-link active" aria-current="page" href="profile.html">Profile</a>
+    <button class="mc-link mc-signout" onclick="signOut()">Sign out</button>
   </div>
 </nav>
 
@@ -294,73 +316,92 @@ nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-con
   </div>
 </div>
 
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="data.js"></script>
+<script type="module">
 /* ══════════════════════════════════════════════════
-   MOCK STUDENT DATA
-   SUPABASE TODO: replace with
-     const { data: { user } } = await supabase.auth.getUser()
-     const { data: profile } = await supabase.from('profiles').select().eq('id', user.id).single()
-     const { data: enrollments } = await supabase.from('enrollments').select('*, courses(*)').eq('user_id', user.id)
+   LOAD STUDENT DATA FROM SUPABASE
 ═══════════════════════════════════════════════════ */
-const student = {
-  name:   "Rahim Uddin",
-  email:  "rahim@gmail.com",
-  class:  "Class 9",
-  school: "Ideal School & College",
-};
+const { data: { session } } = await sb.auth.getSession();
+if (!session) { location.href = 'login.html'; throw new Error('Not logged in'); }
+const user = session.user;
 
-/*
-  watched: stored as a Set of video IDs ("courseId-chapterIdx-videoIdx")
-  SUPABASE TODO: load from supabase.from('watch_progress').select().eq('user_id', user.id)
-  and save on toggle with upsert.
-*/
-const watchedSet = new Set(
-  JSON.parse(localStorage.getItem('mc_watched') || '[]')
-);
-
-function saveWatched() {
-  try { localStorage.setItem('mc_watched', JSON.stringify([...watchedSet])); } catch(e){}
+function esc(v) {      // escape text before it goes into HTML
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 }
 
-const enrolledCourses = [
-  {
-    id: 0, title: "Class 9 Math", tag: "SSC",
-    tagColor: "#22d3ee", tagBg: "rgba(34,211,238,0.08)",
-    purchasedDate: "Jun 10, 2026", price: null,
-    chapters: [
-      { name: "Real Numbers & Surds",      videos: [{t:"Introduction to Real Numbers",d:"12:30"},{t:"Rational vs Irrational Numbers",d:"15:45"},{t:"Surds — Simplification",d:"18:20"},{t:"Operations on Surds",d:"22:10"}] },
-      { name: "Algebraic Expressions",     videos: [{t:"Polynomials — Basics",d:"14:00"},{t:"Factorisation Techniques",d:"20:15"},{t:"Algebraic Identities",d:"17:40"},{t:"Remainder & Factor Theorem",d:"25:00"}] },
-      { name: "Linear Equations",          videos: [{t:"Solving One-Variable Equations",d:"13:20"},{t:"Simultaneous Equations",d:"19:50"},{t:"Word Problems",d:"21:00"}] },
-      { name: "Geometry — Triangles",      videos: [{t:"Triangle Congruence",d:"16:30"},{t:"Triangle Similarity",d:"18:45"},{t:"Pythagoras Theorem",d:"20:00"}] },
-      { name: "Trigonometry",              videos: [{t:"Intro to Trigonometric Ratios",d:"14:55"},{t:"sin, cos, tan — Values",d:"17:20"},{t:"Trigonometric Identities",d:"22:30"},{t:"Height & Distance Problems",d:"26:00"}] },
-    ]
-  }
-];
+const { data: prof } = await sb.from('profiles').select('full_name,class_level,school').eq('id', user.id).maybeSingle();
+const student = {
+  name:   (prof && prof.full_name) || '—',
+  email:  user.email,
+  class:  (prof && prof.class_level) || '',
+  school: (prof && prof.school) || '',
+};
 
-const enrollmentHistory = [
-  { course: "Class 9 Math", date: "Jun 10, 2026", amount: null, status: "Active" },
-];
+/* all of this student's enrollment requests */
+const { data: enrRows } = await sb.from('enrollments')
+  .select('id,course_id,status,amount,created_at,reviewed_at,courses(title)')
+  .eq('user_id', user.id)
+  .order('created_at', { ascending: false });
+const enrollments = enrRows || [];
+
+/* approved courses, with their chapters + videos */
+const enrolledCourses = [];
+for (const e of enrollments.filter(x => x.status === 'approved')) {
+  const c = await fetchCourse(e.course_id);
+  if (!c) continue;
+  enrolledCourses.push({
+    id: c.id, title: c.title, tag: c.tag,
+    tagColor: c.tagColor, tagBg: c.tagBg,
+    purchasedDate: fmtDate(e.reviewed_at || e.created_at),
+    chapters: c.chapters.map(ch => ({
+      name: ch.name,
+      videos: ch.videos.map(v => ({ id: v.id, t: v.title, d: v.duration || '' }))
+    }))
+  });
+}
+
+const enrollmentHistory = enrollments.map(e => ({
+  course: (e.courses && e.courses.title) || 'Course',
+  date: fmtDate(e.created_at),
+  amount: e.amount,
+  status: { approved: 'Active', pending: 'Pending', rejected: 'Rejected', revoked: 'Cancelled' }[e.status] || e.status,
+  color:  { approved: '', pending: '#f59e0b', rejected: '#f87171', revoked: '#f87171' }[e.status] || ''
+}));
+
+/* watched videos (set of video ids, as strings) */
+const { data: wpRows } = await sb.from('watch_progress').select('video_id').eq('user_id', user.id).eq('watched', true);
+const watchedSet = new Set((wpRows || []).map(r => String(r.video_id)));
+
+/* ── helpers ── */
+function courseStats(c) {
+  const total = c.chapters.reduce((s, ch) => s + ch.videos.length, 0);
+  const watched = c.chapters.reduce((s, ch) => s + ch.videos.filter(v => watchedSet.has(String(v.id))).length, 0);
+  return { total, watched, pct: total ? Math.round(watched / total * 100) : 0 };
+}
+function totalWatchedAll() {
+  return enrolledCourses.reduce((s, c) => s + courseStats(c).watched, 0);
+}
 
 /* ── init ── */
 function init() {
-  // sidebar
-  document.getElementById('avatar-initials').textContent = student.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+  document.getElementById('avatar-initials').textContent = student.name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('sidebar-name').textContent = student.name;
   document.getElementById('sidebar-email').textContent = student.email;
 
   const tags = document.getElementById('sidebar-tags');
-  tags.innerHTML = `<span class="profile-tag">${student.class}</span><span class="profile-tag">${student.school.split(' ')[0]}</span>`;
-
-  // total watched
-  let totalVideos = 0;
-  enrolledCourses.forEach(c => c.chapters.forEach(ch => totalVideos += ch.videos.length));
-  const totalWatched = [...watchedSet].filter(k => enrolledCourses.some(c => k.startsWith(c.id+'-'))).length;
+  tags.innerHTML =
+    (student.class ? `<span class="profile-tag">${esc(student.class)}</span>` : '') +
+    (student.school ? `<span class="profile-tag">${esc(student.school.split(' ')[0])}</span>` : '');
 
   document.getElementById('stat-courses').textContent = enrolledCourses.length;
-  document.getElementById('stat-videos').textContent = totalWatched;
+  document.getElementById('stat-videos').textContent = totalWatchedAll();
 
-  // settings form
-  document.getElementById('f-name').value   = student.name;
+  document.getElementById('f-name').value   = student.name === '—' ? '' : student.name;
   document.getElementById('f-email').value  = student.email;
   document.getElementById('f-class').value  = student.class;
   document.getElementById('f-school').value = student.school;
@@ -391,23 +432,19 @@ function renderCourses() {
   }
 
   list.innerHTML = enrolledCourses.map(c => {
-    const totalVids = c.chapters.reduce((s,ch) => s + ch.videos.length, 0);
-    const watchedVids = c.chapters.reduce((s,ch,ci) =>
-      s + ch.videos.filter((_,vi) => watchedSet.has(`${c.id}-${ci}-${vi}`)).length, 0);
-    const pct = totalVids ? Math.round(watchedVids / totalVids * 100) : 0;
-
+    const { total, watched, pct } = courseStats(c);
     const checklistId = `checklist-${c.id}`;
-    const chaptersHtml = c.chapters.map((ch, ci) => `
+    const chaptersHtml = c.chapters.map(ch => `
       <div class="chapter-group">
-        <div class="chapter-group-title">${ch.name}</div>
-        ${ch.videos.map((v, vi) => {
-          const key = `${c.id}-${ci}-${vi}`;
+        <div class="chapter-group-title">${esc(ch.name)}</div>
+        ${ch.videos.map(v => {
+          const key = String(v.id);
           const checked = watchedSet.has(key);
           return `
             <div class="video-check-item" onclick="toggleWatch('${key}', '${c.id}')">
               <div class="check-box ${checked ? 'checked' : ''}" id="cb-${key}">${checked ? '✓' : ''}</div>
-              <span class="video-check-title ${checked ? 'checked' : ''}" id="ct-${key}">${v.t}</span>
-              <span class="video-check-dur">${v.d}</span>
+              <span class="video-check-title ${checked ? 'checked' : ''}" id="ct-${key}">${esc(v.t)}</span>
+              <span class="video-check-dur">${esc(v.d)}</span>
             </div>`;
         }).join('')}
       </div>`).join('');
@@ -416,9 +453,9 @@ function renderCourses() {
       <div class="enrolled-course">
         <div class="ec-top">
           <div class="ec-info">
-            <span class="ec-tag" style="background:${c.tagBg};color:${c.tagColor};border:1px solid ${c.tagColor}33">${c.tag}</span>
-            <div class="ec-title">${c.title}</div>
-            <div class="ec-meta">Enrolled ${c.purchasedDate} · ${totalVids} videos · ${watchedVids} watched</div>
+            <span class="ec-tag" style="background:${c.tagBg};color:${c.tagColor};border:1px solid ${c.tagColor}33">${esc(c.tag)}</span>
+            <div class="ec-title">${esc(c.title)}</div>
+            <div class="ec-meta" id="meta-${c.id}">Enrolled ${esc(c.purchasedDate)} · ${total} videos · ${watched} watched</div>
           </div>
           <button class="go-btn" onclick="location.href='course.html?id=${c.id}'">Go to course →</button>
         </div>
@@ -430,8 +467,8 @@ function renderCourses() {
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="bar-${c.id}" style="width:${pct}%"></div>
           </div>
-          <button class="toggle-checklist" onclick="toggleChecklist('${checklistId}', this)">
-            ▶ Show video checklist (${watchedVids}/${totalVids} watched)
+          <button class="toggle-checklist" id="tc-${c.id}" onclick="toggleChecklist('${checklistId}', this)">
+            ▶ Show video checklist (${watched}/${total} watched)
           </button>
           <div class="video-checklist" id="${checklistId}">
             ${chaptersHtml}
@@ -444,41 +481,53 @@ function renderCourses() {
 function toggleChecklist(id, btn) {
   const el = document.getElementById(id);
   const open = el.classList.toggle('open');
-  const courseId = id.replace('checklist-','');
-  const c = enrolledCourses.find(x => String(x.id) === courseId);
-  const totalVids = c ? c.chapters.reduce((s,ch)=>s+ch.videos.length,0) : 0;
-  const watchedVids = [...watchedSet].filter(k=>k.startsWith(courseId+'-')).length;
-  btn.textContent = (open ? '▼' : '▶') + ` ${open ? 'Hide' : 'Show'} video checklist (${watchedVids}/${totalVids} watched)`;
+  const c = enrolledCourses.find(x => 'checklist-' + x.id === id);
+  const { total, watched } = c ? courseStats(c) : { total: 0, watched: 0 };
+  btn.textContent = (open ? '▼' : '▶') + ` ${open ? 'Hide' : 'Show'} video checklist (${watched}/${total} watched)`;
 }
 
-function toggleWatch(key, courseId) {
-  if (watchedSet.has(key)) watchedSet.delete(key);
-  else watchedSet.add(key);
-  saveWatched();
+/* update every number/bar for one course after a checkbox changes */
+function refreshProgress(courseId) {
+  const c = enrolledCourses.find(x => String(x.id) === String(courseId));
+  if (!c) return;
+  const { total, watched, pct } = courseStats(c);
+  const bar = document.getElementById('bar-' + courseId);
+  const pctEl = document.getElementById('pct-' + courseId);
+  const meta = document.getElementById('meta-' + courseId);
+  const tc = document.getElementById('tc-' + courseId);
+  const open = document.getElementById('checklist-' + courseId).classList.contains('open');
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (meta) meta.textContent = `Enrolled ${c.purchasedDate} · ${total} videos · ${watched} watched`;
+  if (tc) tc.textContent = (open ? '▼' : '▶') + ` ${open ? 'Hide' : 'Show'} video checklist (${watched}/${total} watched)`;
+  document.getElementById('stat-videos').textContent = totalWatchedAll();
+}
 
-  // update checkbox UI
+function paintCheckbox(key) {
   const cb = document.getElementById('cb-' + key);
   const ct = document.getElementById('ct-' + key);
   const watched = watchedSet.has(key);
   if (cb) { cb.classList.toggle('checked', watched); cb.textContent = watched ? '✓' : ''; }
   if (ct) ct.classList.toggle('checked', watched);
+}
 
-  // recalculate progress for this course
-  const c = enrolledCourses.find(x => String(x.id) === courseId);
-  if (!c) return;
-  const totalVids = c.chapters.reduce((s,ch)=>s+ch.videos.length,0);
-  const watchedVids = c.chapters.reduce((s,ch,ci)=>
-    s+ch.videos.filter((_,vi)=>watchedSet.has(`${c.id}-${ci}-${vi}`)).length,0);
-  const pct = totalVids ? Math.round(watchedVids/totalVids*100) : 0;
+async function toggleWatch(key, courseId) {
+  const nowWatched = !watchedSet.has(key);
+  if (nowWatched) watchedSet.add(key); else watchedSet.delete(key);
+  paintCheckbox(key);
+  refreshProgress(courseId);
 
-  const barEl = document.getElementById('bar-' + courseId);
-  const pctEl = document.getElementById('pct-' + courseId);
-  if (barEl) barEl.style.width = pct + '%';
-  if (pctEl) pctEl.textContent = pct + '%';
+  const videoId = Number(key);
+  const { error } = nowWatched
+    ? await sb.from('watch_progress').upsert({ user_id: user.id, video_id: videoId, watched: true })
+    : await sb.from('watch_progress').delete().eq('user_id', user.id).eq('video_id', videoId);
 
-  // update sidebar stat
-  const totalWatched = [...watchedSet].filter(k=>enrolledCourses.some(c=>k.startsWith(c.id+'-'))).length;
-  document.getElementById('stat-videos').textContent = totalWatched;
+  if (error) {            // undo on failure
+    if (nowWatched) watchedSet.delete(key); else watchedSet.add(key);
+    paintCheckbox(key);
+    refreshProgress(courseId);
+    alert('Could not save progress: ' + error.message);
+  }
 }
 
 /* ── RENDER HISTORY ── */
@@ -488,60 +537,59 @@ function renderHistory() {
     list.innerHTML = '<div class="empty-state"><div class="e-icon">🧾</div><p>No enrollment history yet.</p></div>';
     return;
   }
-  list.innerHTML = enrollmentHistory.map(h => `
+  list.innerHTML = enrollmentHistory.map(x => `
     <div class="history-row">
       <div>
-        <div class="history-course">${h.course}</div>
-        <div class="history-date">${h.date}</div>
+        <div class="history-course">${esc(x.course)}</div>
+        <div class="history-date">${esc(x.date)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px">
-        ${h.amount
-          ? `<span class="history-amount">৳${h.amount}</span>`
+        ${x.amount
+          ? `<span class="history-amount">৳${esc(x.amount)}</span>`
           : `<span class="history-amount tbd">Price TBD</span>`}
-        <span class="history-status">${h.status}</span>
+        <span class="history-status" ${x.color ? `style="color:${x.color}"` : ''}>${esc(x.status)}</span>
       </div>
     </div>
   `).join('');
 }
 
 /* ── SAVE SETTINGS ── */
-function saveSettings() {
-  /*
-    SUPABASE TODO:
-    await supabase.from('profiles').update({
-      name: ..., class: ..., school: ...
-    }).eq('id', user.id)
-  */
-  student.name   = document.getElementById('f-name').value.trim() || student.name;
-  student.class  = document.getElementById('f-class').value  || student.class;
-  student.school = document.getElementById('f-school').value || student.school;
+async function saveSettings() {
+  const name   = document.getElementById('f-name').value.trim();
+  const cls    = document.getElementById('f-class').value;
+  const school = document.getElementById('f-school').value.trim();
+  if (!name) { alert('Please enter your name.'); return; }
 
-  // update sidebar live
-  document.getElementById('sidebar-name').textContent = student.name;
-  document.getElementById('avatar-initials').textContent = student.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+  const { error } = await sb.from('profiles')
+    .update({ full_name: name, class_level: cls, school })
+    .eq('id', user.id);
+  if (error) { alert('Could not save: ' + error.message); return; }
 
-  const confirm = document.getElementById('settings-confirm');
-  confirm.classList.add('show');
-  setTimeout(() => confirm.classList.remove('show'), 2500);
+  student.name = name; student.class = cls; student.school = school;
+  init();                       // refresh sidebar
+
+  const confirmEl = document.getElementById('settings-confirm');
+  confirmEl.classList.add('show');
+  setTimeout(() => confirmEl.classList.remove('show'), 2500);
 }
 
 /* ── CHANGE PASSWORD ── */
-function changePassword() {
-  const cur     = document.getElementById('pw-current').value;
-  const nw      = document.getElementById('pw-new').value;
-  const confirm = document.getElementById('pw-confirm').value;
-  const msg     = document.getElementById('pw-confirm-msg');
+async function changePassword() {
+  const cur = document.getElementById('pw-current').value;
+  const nw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-confirm').value;
 
-  if (!cur || !nw || !confirm) { showPwMsg('Please fill in all fields.', '#f87171'); return; }
-  if (nw.length < 8)           { showPwMsg('Password must be at least 8 characters.', '#f87171'); return; }
-  if (nw !== confirm)          { showPwMsg("Passwords don't match.", '#f87171'); return; }
+  if (!cur || !nw || !cf) { showPwMsg('Please fill in all fields.', '#f87171'); return; }
+  if (nw.length < 8)      { showPwMsg('Password must be at least 8 characters.', '#f87171'); return; }
+  if (nw !== cf)          { showPwMsg("Passwords don't match.", '#f87171'); return; }
 
-  /*
-    SUPABASE TODO:
-    const { error } = await supabase.auth.updateUser({ password: nw })
-    if (error) showPwMsg(error.message, '#f87171')
-    else showPwMsg('Password updated!', '#34d399')
-  */
+  // check the current password first
+  const check = await sb.auth.signInWithPassword({ email: user.email, password: cur });
+  if (check.error) { showPwMsg('Current password is wrong.', '#f87171'); return; }
+
+  const { error } = await sb.auth.updateUser({ password: nw });
+  if (error) { showPwMsg(error.message, '#f87171'); return; }
+
   document.getElementById('pw-current').value = '';
   document.getElementById('pw-new').value = '';
   document.getElementById('pw-confirm').value = '';
@@ -585,6 +633,9 @@ function draw(){
   requestAnimationFrame(draw);
 }
 draw();
+
+/* module scripts keep functions private, so expose the ones used by onclick="" */
+Object.assign(window, { showSection, toggleChecklist, toggleWatch, saveSettings, changePassword });
 </script>
 </body>
 </html>

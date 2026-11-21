@@ -306,7 +306,7 @@ tr:last-child td{border-bottom:0} tr:hover td{background:rgba(34,211,238,.03)}
           </div>
           <table>
             <thead><tr>
-              <th>Name</th><th>Email</th><th>Class</th><th>School</th><th>Courses owned</th><th>Joined</th>
+              <th>Name</th><th>Email</th><th>Class</th><th>School</th><th>Courses owned</th><th>Joined</th><th></th>
             </tr></thead>
             <tbody id="students-body"></tbody>
           </table>
@@ -349,16 +349,6 @@ tr:last-child td{border-bottom:0} tr:hover td{background:rgba(34,211,238,.03)}
       <div class="m-field">
         <label>Description</label>
         <textarea id="m-desc" rows="3" placeholder="Short description shown on course card…"></textarea>
-      </div>
-      <div class="m-row2">
-        <div class="m-field">
-          <label>Chapters</label>
-          <input type="number" id="m-chapters" placeholder="e.g. 12" min="1" />
-        </div>
-        <div class="m-field">
-          <label>Videos</label>
-          <input type="number" id="m-videos" placeholder="e.g. 48" min="1" />
-        </div>
       </div>
       <div class="m-field">
         <label>Price (৳) — leave blank if TBD</label>
@@ -406,157 +396,34 @@ tr:last-child td{border-bottom:0} tr:hover td{background:rgba(34,211,238,.03)}
   </div>
 </div>
 
+<!-- ── STUDENT DETAIL MODAL ── -->
+<div class="modal-overlay" id="student-modal" onclick="closeModalOuter(event,'student-modal')">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-head">
+      <h3>Student</h3>
+      <button class="modal-close" onclick="closeModal('student-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="student-modal-body" style="max-height:65vh;overflow-y:auto"></div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn-cancel" onclick="closeModal('student-modal')">Close</button>
+      <button class="btn-reject" id="stu-ban-btn">Ban student</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
 <script src="supabase-config.js"></script>
 <script>
 /* ══════════════════════════════════════════════════
-   MOCK DATA
-   This represents what will come from Supabase later.
-   SUPABASE TODO: replace each section with a
-   supabase.from('table').select() call.
+   DATA — everything below is loaded from Supabase by loadData()
 ═══════════════════════════════════════════════════ */
-
-let courses = [
-  { id:0, title:"Class 9 Math",      tag:"SSC", desc:"Full syllabus coverage for Class 9. Algebra, geometry, trigonometry and more.", chapters:12, videos:48, price:null, students:0 },
-  { id:1, title:"Class 10 Math",     tag:"SSC", desc:"Complete Class 10 math preparation. Focused on board exam patterns.",           chapters:14, videos:56, price:null, students:0 },
-  { id:2, title:"HSC 1st Year Math", tag:"HSC", desc:"Higher math for HSC 1st year. Calculus, vectors, complex numbers.",             chapters:10, videos:42, price:null, students:0 },
-  { id:3, title:"HSC 2nd Year Math", tag:"HSC", desc:"Final year HSC math. Statistics, mechanics, and full board preparation.",        chapters:11, videos:46, price:null, students:0 },
-];
-
-/* loaded from Supabase by loadData() */
+let courses = [];
 let requests = [];
 let students = [];
-
-let nextCourseId = 10;
-
-/* ══════════════════════════════════════════════════
-   CHAPTERS / VIDEOS DATA
-   Mirrors the `courseData[i].chapters` array in course.html.
-   Keyed by course id. Edits made here are saved to
-   localStorage under 'mc_chapters_override' and course.html
-   reads that override on load, so changes show up live
-   (same browser / same site once hosted — file:// double-click
-   pages can have separate storage per file in some browsers).
-   SUPABASE TODO: replace with `chapters` + `videos` tables,
-   each video row has a youtube_id column.
-═══════════════════════════════════════════════════ */
-const defaultChapters = {
-  0: [
-    { name: "Real Numbers & Surds", videos: [
-      { title: "Introduction to Real Numbers", duration: "12:30", free: true, youtubeId: "" },
-      { title: "Rational vs Irrational Numbers", duration: "15:45", free: true, youtubeId: "" },
-      { title: "Surds — Simplification", duration: "18:20", free: false, youtubeId: "" },
-      { title: "Operations on Surds", duration: "22:10", free: false, youtubeId: "" },
-    ]},
-    { name: "Algebraic Expressions", videos: [
-      { title: "Polynomials — Basics", duration: "14:00", free: true, youtubeId: "" },
-      { title: "Factorisation Techniques", duration: "20:15", free: false, youtubeId: "" },
-      { title: "Algebraic Identities", duration: "17:40", free: false, youtubeId: "" },
-      { title: "Remainder & Factor Theorem", duration: "25:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Linear Equations", videos: [
-      { title: "Solving One-Variable Equations", duration: "13:20", free: true, youtubeId: "" },
-      { title: "Simultaneous Equations", duration: "19:50", free: false, youtubeId: "" },
-      { title: "Word Problems", duration: "21:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Geometry — Triangles", videos: [
-      { title: "Triangle Congruence", duration: "16:30", free: false, youtubeId: "" },
-      { title: "Triangle Similarity", duration: "18:45", free: false, youtubeId: "" },
-      { title: "Pythagoras Theorem", duration: "20:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Trigonometry", videos: [
-      { title: "Intro to Trigonometric Ratios", duration: "14:55", free: true, youtubeId: "" },
-      { title: "sin, cos, tan — Values", duration: "17:20", free: false, youtubeId: "" },
-      { title: "Trigonometric Identities", duration: "22:30", free: false, youtubeId: "" },
-      { title: "Height & Distance Problems", duration: "26:00", free: false, youtubeId: "" },
-    ]},
-  ],
-  1: [
-    { name: "Quadratic Equations", videos: [
-      { title: "Introduction to Quadratics", duration: "13:00", free: true, youtubeId: "" },
-      { title: "Factorisation Method", duration: "16:40", free: true, youtubeId: "" },
-      { title: "Quadratic Formula", duration: "19:20", free: false, youtubeId: "" },
-      { title: "Nature of Roots", duration: "18:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Arithmetic Progression", videos: [
-      { title: "AP — Introduction", duration: "12:10", free: true, youtubeId: "" },
-      { title: "nth Term Formula", duration: "15:30", free: false, youtubeId: "" },
-      { title: "Sum of n Terms", duration: "20:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Coordinate Geometry", videos: [
-      { title: "Distance Formula", duration: "14:20", free: true, youtubeId: "" },
-      { title: "Section Formula", duration: "17:00", free: false, youtubeId: "" },
-      { title: "Area of Triangle", duration: "16:45", free: false, youtubeId: "" },
-    ]},
-    { name: "Circles", videos: [
-      { title: "Tangent to a Circle", duration: "18:30", free: false, youtubeId: "" },
-      { title: "Chord Properties", duration: "20:15", free: false, youtubeId: "" },
-      { title: "Cyclic Quadrilateral", duration: "22:00", free: false, youtubeId: "" },
-    ]},
-  ],
-  2: [
-    { name: "Complex Numbers", videos: [
-      { title: "Introduction to Complex Numbers", duration: "15:00", free: true, youtubeId: "" },
-      { title: "Argand Plane", duration: "18:20", free: true, youtubeId: "" },
-      { title: "Modulus & Argument", duration: "20:40", free: false, youtubeId: "" },
-      { title: "De Moivre's Theorem", duration: "24:10", free: false, youtubeId: "" },
-    ]},
-    { name: "Matrices & Determinants", videos: [
-      { title: "Matrix Operations", duration: "16:30", free: true, youtubeId: "" },
-      { title: "Determinants", duration: "19:00", free: false, youtubeId: "" },
-      { title: "Inverse of a Matrix", duration: "22:15", free: false, youtubeId: "" },
-      { title: "Cramer's Rule", duration: "25:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Vectors", videos: [
-      { title: "Vector Basics", duration: "14:00", free: true, youtubeId: "" },
-      { title: "Dot Product", duration: "17:30", free: false, youtubeId: "" },
-      { title: "Cross Product", duration: "20:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Differential Calculus", videos: [
-      { title: "Limits — Introduction", duration: "16:20", free: true, youtubeId: "" },
-      { title: "Differentiation from First Principles", duration: "22:00", free: false, youtubeId: "" },
-      { title: "Chain Rule", duration: "19:45", free: false, youtubeId: "" },
-      { title: "Applications of Derivatives", duration: "27:30", free: false, youtubeId: "" },
-    ]},
-  ],
-  3: [
-    { name: "Integral Calculus", videos: [
-      { title: "Introduction to Integration", duration: "16:00", free: true, youtubeId: "" },
-      { title: "Standard Integrals", duration: "20:30", free: true, youtubeId: "" },
-      { title: "Integration by Substitution", duration: "22:00", free: false, youtubeId: "" },
-      { title: "Definite Integrals", duration: "24:15", free: false, youtubeId: "" },
-      { title: "Area Under a Curve", duration: "26:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Statistics", videos: [
-      { title: "Mean, Median, Mode", duration: "14:30", free: true, youtubeId: "" },
-      { title: "Standard Deviation", duration: "18:20", free: false, youtubeId: "" },
-      { title: "Probability Distributions", duration: "22:00", free: false, youtubeId: "" },
-    ]},
-    { name: "Conic Sections", videos: [
-      { title: "Circle Equations", duration: "17:00", free: true, youtubeId: "" },
-      { title: "Parabola", duration: "20:45", free: false, youtubeId: "" },
-      { title: "Ellipse & Hyperbola", duration: "24:30", free: false, youtubeId: "" },
-    ]},
-    { name: "Mechanics", videos: [
-      { title: "Forces & Motion", duration: "18:00", free: false, youtubeId: "" },
-      { title: "Projectile Motion", duration: "22:30", free: false, youtubeId: "" },
-      { title: "Work, Energy & Power", duration: "20:15", free: false, youtubeId: "" },
-    ]},
-  ],
-};
-
-function loadChaptersOverride() {
-  try {
-    const raw = localStorage.getItem('mc_chapters_override');
-    return raw ? JSON.parse(raw) : {};
-  } catch (e) { return {}; }
-}
-
-// merge saved overrides on top of defaults so admin always sees the latest
-let chaptersData = Object.assign({}, defaultChapters, loadChaptersOverride());
-
+let chaptersData = {};        // courseId -> [{ id, name, ord, videos:[{ id, title, duration, free, youtubeId, ord }] }]
 let activeVideoCourseId = null;
-let workingChapters = [];
+let workingChapters = [];     // copy being edited in the video manager
+let originalChapters = [];    // copy as loaded, to work out what changed on save
 
 /* ── admin check (replaces the old password gate) ── */
 async function initAdmin() {
@@ -656,15 +523,20 @@ function fmtDate(iso) {
 
 /* ── load requests + students from Supabase ── */
 async function loadData() {
-  const [enr, pro] = await Promise.all([
+  const [enr, pro, cou, src] = await Promise.all([
     sb.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false }),
-    sb.from('profiles').select('*').order('created_at', { ascending: false })
+    sb.from('profiles').select('*').order('created_at', { ascending: false }),
+    sb.from('courses').select('*, chapters(id,name,sort_order,videos(id,title,duration,is_free,sort_order))').order('sort_order').order('id'),
+    sb.from('video_sources').select('video_id,youtube_id')
   ]);
-  if (enr.error || pro.error) { alert('Could not load data: ' + (enr.error || pro.error).message); return; }
+  const failed = enr.error || pro.error || cou.error || src.error;
+  if (failed) { alert('Could not load data: ' + failed.message); return; }
   const byId = Object.fromEntries(pro.data.map(p => [p.id, p]));
 
   requests = enr.data.map(e => ({
     id: e.id,
+    userId: e.user_id,
+    courseId: e.course_id,
     name: (byId[e.user_id] && byId[e.user_id].full_name) || '—',
     email: e.student_email || (byId[e.user_id] && byId[e.user_id].email) || '—',
     course: e.courses ? e.courses.title : '—',
@@ -688,8 +560,30 @@ async function loadData() {
     class: p.class_level || '—',
     school: p.school || '—',
     courses: approvedCount[p.id] || 0,
-    joined: fmtDate(p.created_at)
+    joined: fmtDate(p.created_at),
+    banned: !!p.banned
   }));
+
+  /* courses, chapters, videos */
+  const ytByVideo = Object.fromEntries(src.data.map(x => [x.video_id, x.youtube_id]));
+  const bySort = (a, b) => ((a.sort_order || 0) - (b.sort_order || 0)) || (a.id - b.id);
+  chaptersData = {};
+  courses = cou.data.map(c => {
+    const chs = c.chapters.sort(bySort).map((ch, ci) => ({
+      id: ch.id, name: ch.name, ord: ci,
+      videos: ch.videos.sort(bySort).map((v, vi) => ({
+        id: v.id, title: v.title, duration: v.duration || '', free: v.is_free,
+        youtubeId: ytByVideo[v.id] || '', ord: vi
+      }))
+    }));
+    chaptersData[c.id] = chs;
+    return {
+      id: c.id, title: c.title, tag: c.tag || 'SSC', desc: c.description || '',
+      chapters: chs.length,
+      videos: chs.reduce((n, ch) => n + ch.videos.length, 0),
+      price: c.price || null, published: c.published, meta: c.meta || {}
+    };
+  });
 }
 
 /* ── REQUESTS ── */
@@ -711,7 +605,7 @@ function renderRequests() {
 }
 
 function requestRow(r, short) {
-  const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' }[r.status];
+  const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected', revoked:'status-rejected' }[r.status];
   const approveReject = `<button class="btn-approve" onclick="approveReq(${r.id})">Approve</button>
         <button class="btn-reject"  onclick="rejectReq(${r.id})">Reject</button>`;
   const actions = r.status === 'pending'
@@ -742,10 +636,19 @@ function requestRow(r, short) {
 }
 
 async function setReqStatus(id, status) {
+  const r = requests.find(x => x.id === id);
   const { error } = await sb.from('enrollments')
     .update({ status, reviewed_at: new Date().toISOString() })
     .eq('id', id);
   if (error) { alert('Could not update: ' + error.message); return; }
+
+  // the payment screenshot is no longer needed: delete the file, then clear its path
+  if (r && r.screenshot) {
+    const del = await sb.storage.from('payment-screenshots').remove([r.screenshot]);
+    if (!del.error && del.data && del.data.length) {
+      await sb.from('enrollments').update({ screenshot_path: null }).eq('id', id);
+    }
+  }
   await loadData();
   renderAll();
 }
@@ -755,7 +658,7 @@ function rejectReq(id)  { setReqStatus(id, 'rejected'); }
 function viewReq(id) {
   const r = requests.find(x => x.id === id);
   if (!r) return;
-  const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected' }[r.status];
+  const statusClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected', revoked:'status-rejected' }[r.status];
   const row = (label, val, extra) => `<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#475569">${label}</span><span style="color:#e2e8f0;${extra || ''}">${val}</span></div>`;
   document.getElementById('req-modal-body').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px">
@@ -774,7 +677,7 @@ function viewReq(id) {
         ${row('Submitted', esc(r.date))}
         ${r.note ? row('Note', esc(r.note), 'color:#94a3b8;max-width:220px;text-align:right') : ''}
       </div>
-      <div id="req-shot" style="font-size:13px;color:#475569">${r.screenshot ? 'Loading screenshot…' : 'No screenshot attached'}</div>
+      <div id="req-shot" style="font-size:13px;color:#475569">${r.screenshot ? 'Loading screenshot…' : (r.status === 'pending' ? 'No screenshot attached' : 'Screenshot deleted after review')}</div>
     </div>
   `;
   document.getElementById('modal-approve-btn').onclick = () => { approveReq(id); closeModal('req-modal'); };
@@ -805,39 +708,250 @@ function renderStudents() {
   document.getElementById('stu-count').textContent = `${filtered.length} student${filtered.length !== 1 ? 's' : ''}`;
   const tbody = document.getElementById('students-body');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No students found</td></tr>'; return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found</td></tr>'; return;
   }
   tbody.innerHTML = filtered.map(s => `
     <tr>
-      <td class="td-name">${esc(s.name)}</td>
+      <td class="td-name">${esc(s.name)}${s.banned ? ' <span class="status-badge status-rejected">Banned</span>' : ''}</td>
       <td class="td-email">${esc(s.email)}</td>
       <td>${esc(s.class)}</td>
       <td>${esc(s.school)}</td>
       <td><span style="color:#22d3ee;font-weight:600">${s.courses}</span></td>
       <td>${esc(s.joined)}</td>
+      <td><button class="btn-sm" onclick="openStudent('${s.id}')">View</button></td>
     </tr>
   `).join('');
+}
+
+/* ── helpers for saving ── */
+async function must(promise) {            // throw if Supabase returned an error
+  const r = await promise;
+  if (r.error) throw r.error;
+  return r;
+}
+async function refresh() { await loadData(); renderAll(); }
+
+// accepts a full YouTube link or a bare 11-character id; returns the id or ''
+function ytId(input) {
+  const t = String(input || '').trim();
+  const m = t.match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  return /^[A-Za-z0-9_-]{11}$/.test(t) ? t : '';
+}
+
+/* ── video length: read automatically from YouTube ── */
+let ytApiPromise = null;
+function loadYT() {
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) return resolve();
+    window.onYouTubeIframeAPIReady = resolve;
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.onerror = () => reject(new Error('Could not load the YouTube player'));
+    document.head.appendChild(tag);
+  });
+  return ytApiPromise;
+}
+
+// returns the length in seconds, or null if YouTube would not tell us
+function ytDuration(id) {
+  return loadYT().then(() => new Promise(resolve => {
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-9999px;top:0;width:200px;height:120px';
+    const inner = document.createElement('div');
+    holder.appendChild(inner);
+    document.body.appendChild(holder);
+    let done = false, player = null, poll = null;
+    const finish = v => {
+      if (done) return;
+      done = true;
+      clearInterval(poll);
+      try { player && player.destroy(); } catch (e) {}
+      holder.remove();
+      resolve(v);
+    };
+    player = new YT.Player(inner, {
+      videoId: id,
+      events: {
+        onReady: e => {
+          let tries = 0;
+          poll = setInterval(() => {
+            const d = e.target.getDuration();
+            if (d > 0) finish(d);
+            else if (++tries > 25) finish(null);
+          }, 300);
+        },
+        onError: () => finish(null)
+      }
+    });
+    setTimeout(() => finish(null), 12000);
+  })).catch(() => null);
+}
+
+function fmtDur(sec) {
+  sec = Math.round(sec);
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), r = sec % 60;
+  const pad = n => String(n).padStart(2, '0');
+  return h ? `${h}:${pad(m)}:${pad(r)}` : `${m}:${pad(r)}`;
+}
+
+/* ── STUDENT DETAIL ── */
+function parseDur(t) {                       // "12:30" or "1:02:03" -> seconds
+  if (!t) return 0;
+  const p = String(t).split(':').map(Number);
+  if (p.some(isNaN)) return 0;
+  return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p.length === 2 ? p[0]*60 + p[1] : 0;
+}
+function fmtWatch(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h ? `${h}h ${m}m` : `${m} min`;
+}
+
+let activeStudentId = null;
+async function openStudent(id) {
+  const st = students.find(x => x.id === id);
+  if (!st) return;
+  activeStudentId = id;
+  const body = document.getElementById('student-modal-body');
+  body.innerHTML = '<div style="color:#475569;font-size:14px;padding:20px 0">Loading…</div>';
+
+  const banBtn = document.getElementById('stu-ban-btn');
+  banBtn.textContent = st.banned ? 'Unban student' : 'Ban student';
+  banBtn.className = st.banned ? 'btn-approve' : 'btn-reject';
+  banBtn.onclick = () => toggleBan(id);
+  openModal('student-modal');
+
+  const { data: wp, error } = await sb.from('watch_progress')
+    .select('video_id, watched_at, videos(title, duration, chapters(course_id, name))')
+    .eq('user_id', id).eq('watched', true)
+    .order('watched_at', { ascending: false });
+  if (error) { body.innerHTML = `<div style="color:#f87171;font-size:14px">Could not load: ${esc(error.message)}</div>`; return; }
+  const rows = wp || [];
+
+  const watchedBy = {};
+  let secs = 0;
+  rows.forEach(r => {
+    const cid = r.videos && r.videos.chapters ? r.videos.chapters.course_id : null;
+    if (cid) watchedBy[cid] = (watchedBy[cid] || 0) + 1;
+    secs += parseDur(r.videos && r.videos.duration);
+  });
+
+  const mine = requests.filter(r => r.userId === id);
+  const owned = mine.filter(r => r.status === 'approved').length;
+  const lastActive = rows.length && rows[0].watched_at ? fmtDate(rows[0].watched_at) : '—';
+  const courseTitle = cid => { const c = courses.find(x => x.id === cid); return c ? c.title : 'Course'; };
+  const badgeClass = { pending:'status-pending', approved:'status-approved', rejected:'status-rejected', revoked:'status-rejected' };
+  const box = (label, val) => `<div style="flex:1;min-width:110px;background:rgba(34,211,238,0.04);border:1px solid rgba(34,211,238,0.1);border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.06em">${label}</div><div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-top:2px">${val}</div></div>`;
+
+  const coursesHtml = mine.length ? mine.map(r => {
+    const c = courses.find(x => x.id === r.courseId);
+    const total = c ? c.videos : 0;
+    const w = watchedBy[r.courseId] || 0;
+    const pct = total ? Math.round(w / total * 100) : 0;
+    const progress = r.status === 'approved' ? `
+        <div style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:4px"><span>${w} of ${total} videos watched</span><span>${pct}%</span></div>
+          <div style="height:6px;border-radius:6px;background:rgba(255,255,255,0.06);overflow:hidden"><div style="height:100%;width:${pct}%;background:#22d3ee"></div></div>
+        </div>
+        <div style="margin-top:10px"><button class="btn-sm btn-danger" onclick="revokeEnrollment(${r.id})">Cancel access</button></div>` : '';
+    return `
+      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#e2e8f0">${esc(r.course)}</div>
+            <div style="font-size:12px;color:#475569">${esc(r.date)}${r.amount ? ' · ৳' + esc(r.amount) : ''}${r.txnId ? ' · ' + esc(r.txnId) : ''}</div>
+          </div>
+          <span class="status-badge ${badgeClass[r.status] || ''}">${esc(r.status)}</span>
+        </div>${progress}
+      </div>`;
+  }).join('') : '<div style="font-size:13px;color:#475569">No enrollment requests yet.</div>';
+
+  const recentHtml = rows.length ? rows.slice(0, 8).map(r => `
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:#e2e8f0">${esc(r.videos ? r.videos.title : 'Video')} <span style="color:#475569">· ${esc(courseTitle(r.videos && r.videos.chapters ? r.videos.chapters.course_id : null))}</span></span>
+        <span style="color:#475569;white-space:nowrap">${r.watched_at ? esc(fmtDate(r.watched_at)) : ''}</span>
+      </div>`).join('') : '<div style="font-size:13px;color:#475569">No videos watched yet.</div>';
+
+  body.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div>
+          <div style="font-size:17px;font-weight:700;color:#e2e8f0">${esc(st.name)}</div>
+          <div style="font-size:13px;color:#475569">${esc(st.email)}</div>
+          <div style="font-size:12px;color:#475569;margin-top:2px">${esc(st.class)} · ${esc(st.school)} · joined ${esc(st.joined)}</div>
+        </div>
+        <span class="status-badge ${st.banned ? 'status-rejected' : 'status-approved'}">${st.banned ? 'Banned' : 'Active'}</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${box('Courses owned', owned)}
+        ${box('Videos watched', rows.length)}
+        ${box('Est. watch time', fmtWatch(secs))}
+        ${box('Last active', esc(lastActive))}
+      </div>
+      <div style="font-size:11px;color:#475569;margin-top:-8px">Watch time is estimated from the total length of the videos this student marked as watched.</div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Courses</div>
+        <div style="display:flex;flex-direction:column;gap:10px">${coursesHtml}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Recently watched</div>
+        ${recentHtml}
+      </div>
+    </div>`;
+}
+
+async function revokeEnrollment(enrId) {
+  const r = requests.find(x => x.id === enrId);
+  if (!r) return;
+  if (!confirm(`Cancel ${r.name}'s access to "${r.course}"?\nThey lose access right away, and can send a new request later.`)) return;
+  const { error } = await sb.from('enrollments')
+    .update({ status: 'revoked', reviewed_at: new Date().toISOString() })
+    .eq('id', enrId);
+  if (error) { alert('Could not cancel: ' + error.message); return; }
+  await refresh();
+  if (activeStudentId) openStudent(activeStudentId);
+}
+
+async function toggleBan(id) {
+  const st = students.find(x => x.id === id);
+  if (!st) return;
+  const ban = !st.banned;
+  const msg = ban
+    ? `Ban ${st.name}?\nThey lose access to all paid videos and are signed out whenever they open the site.`
+    : `Unban ${st.name}?`;
+  if (!confirm(msg)) return;
+  const { error } = await sb.rpc('admin_set_banned', { target: id, flag: ban });
+  if (error) { alert('Could not update: ' + error.message); return; }
+  await refresh();
+  openStudent(id);
 }
 
 /* ── COURSES ── */
 function renderCourses() {
   const grid = document.getElementById('course-admin-grid');
+  if (!courses.length) {
+    grid.innerHTML = '<div style="color:#475569;font-size:14px;padding:20px 0">No courses yet. Click "Add course" to create one.</div>';
+    return;
+  }
   grid.innerHTML = courses.map(c => {
     const col = c.tag === 'HSC' ? '#f59e0b' : '#22d3ee';
     const tagBg = c.tag === 'HSC' ? 'rgba(245,158,11,0.1)' : 'rgba(34,211,238,0.08)';
-    const enrolled = requests.filter(r => r.course === c.title && r.status === 'approved').length;
+    const enrolled = requests.filter(r => r.courseId === c.id && r.status === 'approved').length;
     return `
     <div class="course-admin-card">
       <div class="cac-top">
-        <span class="cac-tag" style="background:${tagBg};color:${col};border:1px solid ${col}33">${c.tag}</span>
+        <span class="cac-tag" style="background:${tagBg};color:${col};border:1px solid ${col}33">${esc(c.tag)}</span>
+        ${c.published ? '' : '<span class="status-badge status-rejected">Hidden</span>'}
         <div class="cac-actions">
           <button class="btn-sm" onclick="openVideoManager(${c.id})">Manage videos</button>
           <button class="btn-sm" onclick="openEditCourse(${c.id})">Edit</button>
+          <button class="btn-sm" onclick="togglePublish(${c.id})">${c.published ? 'Hide' : 'Show'}</button>
           <button class="btn-sm btn-danger" onclick="deleteCourse(${c.id})">Remove</button>
         </div>
       </div>
-      <div class="cac-title">${c.title}</div>
-      <div class="cac-desc">${c.desc}</div>
+      <div class="cac-title">${esc(c.title)}</div>
+      <div class="cac-desc">${esc(c.desc)}</div>
       <div class="cac-stats">
         <div class="cac-stat">Chapters: <span>${c.chapters}</span></div>
         <div class="cac-stat">Videos: <span>${c.videos}</span></div>
@@ -869,18 +983,37 @@ function togglePriceEdit(id) {
   if (form.classList.contains('show')) document.getElementById('price-input-' + id).focus();
 }
 
-function savePrice(id) {
+async function savePrice(id) {
   const val = parseInt(document.getElementById('price-input-' + id).value);
-  const c = courses.find(x => x.id === id);
-  if (!c) return;
-  c.price = isNaN(val) || val <= 0 ? null : val;
-  renderCourses();
+  const price = isNaN(val) || val <= 0 ? 0 : val;       // 0 = "price not set"
+  try {
+    await must(sb.from('courses').update({ price }).eq('id', id));
+    await refresh();
+  } catch (e) { alert('Could not save price: ' + e.message); }
 }
 
-function deleteCourse(id) {
-  if (!confirm('Remove this course? This cannot be undone.')) return;
-  courses = courses.filter(c => c.id !== id);
-  renderAll();
+async function togglePublish(id) {
+  const c = courses.find(x => x.id === id);
+  if (!c) return;
+  try {
+    await must(sb.from('courses').update({ published: !c.published }).eq('id', id));
+    await refresh();
+  } catch (e) { alert('Could not update: ' + e.message); }
+}
+
+async function deleteCourse(id) {
+  const c = courses.find(x => x.id === id);
+  if (!c) return;
+  const used = requests.filter(r => r.courseId === id).length;
+  if (used) {
+    alert(`This course has ${used} enrollment request(s), and removing it would erase those records.\nUse "Hide" instead, so students no longer see it.`);
+    return;
+  }
+  if (!confirm(`Remove "${c.title}" and all its chapters and videos? This cannot be undone.`)) return;
+  try {
+    await must(sb.from('courses').delete().eq('id', id));
+    await refresh();
+  } catch (e) { alert('Could not remove: ' + e.message); }
 }
 
 /* ── ADD / EDIT COURSE MODAL ── */
@@ -890,8 +1023,6 @@ function openAddCourse() {
   document.getElementById('m-title').value = '';
   document.getElementById('m-tag').value = 'SSC';
   document.getElementById('m-desc').value = '';
-  document.getElementById('m-chapters').value = '';
-  document.getElementById('m-videos').value = '';
   document.getElementById('m-price').value = '';
   openModal('course-modal');
 }
@@ -904,33 +1035,38 @@ function openEditCourse(id) {
   document.getElementById('m-title').value = c.title;
   document.getElementById('m-tag').value = c.tag;
   document.getElementById('m-desc').value = c.desc;
-  document.getElementById('m-chapters').value = c.chapters;
-  document.getElementById('m-videos').value = c.videos;
   document.getElementById('m-price').value = c.price || '';
   openModal('course-modal');
 }
 
-function saveCourse() {
+function tagMeta(tag) {      // colors used by the course cards / course page
+  return tag === 'HSC'
+    ? { tagClass:'tag-hsc', tagColor:'#f59e0b', tagBg:'rgba(245,158,11,0.08)', accentFrom:'#2a1a05', accentTo:'#050814' }
+    : { tagClass:'tag-ssc', tagColor:'#22d3ee', tagBg:'rgba(34,211,238,0.08)', accentFrom:'#0a2a3a', accentTo:'#050814' };
+}
+
+async function saveCourse() {
   const title    = document.getElementById('m-title').value.trim();
   const tag      = document.getElementById('m-tag').value;
   const desc     = document.getElementById('m-desc').value.trim();
-  const chapters = parseInt(document.getElementById('m-chapters').value) || 0;
-  const videos   = parseInt(document.getElementById('m-videos').value) || 0;
   const priceVal = parseInt(document.getElementById('m-price').value);
-  const price    = isNaN(priceVal) || priceVal <= 0 ? null : priceVal;
+  const price    = isNaN(priceVal) || priceVal <= 0 ? 0 : priceVal;
   const editId   = document.getElementById('edit-course-id').value;
 
   if (!title) { alert('Course title is required.'); return; }
 
-  if (editId !== '') {
-    const c = courses.find(x => x.id === parseInt(editId));
-    if (c) { c.title = title; c.tag = tag; c.desc = desc; c.chapters = chapters; c.videos = videos; c.price = price; }
-  } else {
-    courses.push({ id: nextCourseId++, title, tag, desc, chapters, videos, price, students: 0 });
-  }
-
-  closeModal('course-modal');
-  renderAll();
+  try {
+    if (editId !== '') {
+      const c = courses.find(x => x.id === parseInt(editId));
+      const meta = Object.assign({}, c ? c.meta : {}, tagMeta(tag), { longDesc: desc });
+      await must(sb.from('courses').update({ title, tag, description: desc, price, meta }).eq('id', parseInt(editId)));
+    } else {
+      const meta = Object.assign(tagMeta(tag), { longDesc: desc });
+      await must(sb.from('courses').insert({ title, tag, description: desc, price, sort_order: courses.length, meta }));
+    }
+    closeModal('course-modal');
+    await refresh();
+  } catch (e) { alert('Could not save course: ' + e.message); }
 }
 
 /* ── VIDEO MANAGER ── */
@@ -938,8 +1074,9 @@ function openVideoManager(courseId) {
   const c = courses.find(x => x.id === courseId);
   if (!c) return;
   activeVideoCourseId = courseId;
-  // deep copy so cancel doesn't mutate saved data
-  workingChapters = JSON.parse(JSON.stringify(chaptersData[courseId] || []));
+  // deep copies so cancel doesn't change anything
+  workingChapters  = JSON.parse(JSON.stringify(chaptersData[courseId] || []));
+  originalChapters = JSON.parse(JSON.stringify(chaptersData[courseId] || []));
   document.getElementById('video-modal-title').textContent = `Manage Videos — ${c.title}`;
   renderVideoManager();
   openModal('video-modal');
@@ -963,8 +1100,7 @@ function renderVideoManager() {
         <div class="video-edit-row">
           <input type="text" value="${escapeAttr(v.title)}" placeholder="Video title"
             oninput="workingChapters[${ci}].videos[${vi}].title = this.value" />
-          <input type="text" value="${escapeAttr(v.duration)}" placeholder="mm:ss"
-            oninput="workingChapters[${ci}].videos[${vi}].duration = this.value" />
+          <span style="font-size:12px;color:#64748b;text-align:center">${v.duration ? esc(v.duration) : 'auto'}</span>
           <label class="free-check">
             <input type="checkbox" ${v.free ? 'checked' : ''}
               onchange="workingChapters[${ci}].videos[${vi}].free = this.checked" /> Free
@@ -972,8 +1108,8 @@ function renderVideoManager() {
           <button class="btn-x" title="Remove video" onclick="removeVideo(${ci}, ${vi})">✕</button>
         </div>
         <div class="video-yt-row">
-          <input type="text" value="${escapeAttr(v.youtubeId || '')}" placeholder="YouTube video ID (e.g. dQw4w9WgXcQ) — leave blank if not uploaded yet"
-            oninput="workingChapters[${ci}].videos[${vi}].youtubeId = this.value.trim()" />
+          <input type="text" value="${escapeAttr(v.youtubeId || '')}" placeholder="Paste the YouTube link (or the 11-character video ID) — leave blank if not uploaded yet"
+            oninput="workingChapters[${ci}].videos[${vi}].youtubeId = this.value" />
         </div>
       `).join('')}
       <div class="chapter-foot">
@@ -1004,29 +1140,94 @@ function removeVideo(ci, vi) {
   renderVideoManager();
 }
 
-function saveVideoManager() {
+async function saveVideoManager() {
   if (activeVideoCourseId === null) return;
-  chaptersData[activeVideoCourseId] = workingChapters;
+  const cid = activeVideoCourseId;
 
-  // persist override to localStorage so course.html picks it up
-  const overrides = loadChaptersOverride();
-  overrides[activeVideoCourseId] = workingChapters;
+  // check everything first
+  for (const ch of workingChapters) {
+    if (!ch.name.trim()) { alert('Every chapter needs a name.'); return; }
+    for (const v of ch.videos) {
+      if (!v.title.trim()) { alert(`Every video needs a title (chapter "${ch.name}").`); return; }
+      if ((v.youtubeId || '').trim() && !ytId(v.youtubeId)) {
+        alert(`Could not read the YouTube link for "${v.title}".\nPaste the full link or the 11-character video ID.`);
+        return;
+      }
+    }
+  }
+
+  const btn = document.querySelector('#video-modal .btn-primary');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const noLength = [];
   try {
-    localStorage.setItem('mc_chapters_override', JSON.stringify(overrides));
+    const origCh = Object.fromEntries(originalChapters.map(c => [c.id, c]));
+    const origVid = {};
+    originalChapters.forEach(c => c.videos.forEach(v => { origVid[v.id] = v; }));
+
+    // 1. delete removed chapters (their videos go with them) and removed videos
+    const keepCh = workingChapters.filter(c => c.id).map(c => c.id);
+    const keepVid = workingChapters.flatMap(c => c.videos.filter(v => v.id).map(v => v.id));
+    const goneCh = originalChapters.filter(c => !keepCh.includes(c.id)).map(c => c.id);
+    if (goneCh.length) await must(sb.from('chapters').delete().in('id', goneCh));
+    const goneVid = originalChapters.filter(c => keepCh.includes(c.id))
+      .flatMap(c => c.videos.map(v => v.id)).filter(id => !keepVid.includes(id));
+    if (goneVid.length) await must(sb.from('videos').delete().in('id', goneVid));
+
+    // 2. add / update chapters and videos (only rows that changed)
+    for (let ci = 0; ci < workingChapters.length; ci++) {
+      const ch = workingChapters[ci];
+      const name = ch.name.trim();
+      if (ch.id) {
+        const o = origCh[ch.id];
+        if (o.name !== name || o.ord !== ci) {
+          await must(sb.from('chapters').update({ name, sort_order: ci }).eq('id', ch.id));
+        }
+      } else {
+        const r = await must(sb.from('chapters').insert({ course_id: cid, name, sort_order: ci }).select('id').single());
+        ch.id = r.data.id;
+      }
+
+      for (let vi = 0; vi < ch.videos.length; vi++) {
+        const v = ch.videos[vi];
+        const o = v.id ? origVid[v.id] : null;
+        const newYt = ytId(v.youtubeId);
+        const oldYt = o ? (o.youtubeId || '') : '';
+
+        // new or changed link -> read the video length from YouTube
+        let duration = v.duration || null;
+        if (newYt && newYt !== oldYt) {
+          btn.textContent = 'Reading video length…';
+          const secs = await ytDuration(newYt);
+          if (secs) duration = fmtDur(secs);
+          else noLength.push(v.title.trim());
+        }
+        const row = { title: v.title.trim(), duration, is_free: !!v.free, sort_order: vi };
+        if (v.id) {
+          if (o.title !== row.title || (o.duration || null) !== row.duration || o.free !== row.is_free || o.ord !== vi) {
+            await must(sb.from('videos').update(row).eq('id', v.id));
+          }
+        } else {
+          const r = await must(sb.from('videos').insert(Object.assign({ chapter_id: ch.id }, row)).select('id').single());
+          v.id = r.data.id;
+        }
+
+        // YouTube id lives in its own (access-protected) table
+        if (newYt !== oldYt) {
+          if (newYt) await must(sb.from('video_sources').upsert({ video_id: v.id, youtube_id: newYt }));
+          else       await must(sb.from('video_sources').delete().eq('video_id', v.id));
+        }
+      }
+    }
+    closeModal('video-modal');
+    if (noLength.length) alert('Saved, but YouTube would not tell the length of:\n• ' + noLength.join('\n• ') + '\nCheck that the link is correct and the video is not private.');
   } catch (e) {
-    alert('Could not save — storage may be full or blocked.');
-    return;
+    alert('Something went wrong while saving: ' + e.message + '\nSome changes may already be saved. Reopen the video manager to check.');
+    closeModal('video-modal');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save videos';
+    await refresh();
   }
-
-  // keep the chapter/video counts on the course card in sync
-  const c = courses.find(x => x.id === activeVideoCourseId);
-  if (c) {
-    c.chapters = workingChapters.length;
-    c.videos = workingChapters.reduce((s, ch) => s + ch.videos.length, 0);
-  }
-
-  closeModal('video-modal');
-  renderAll();
 }
 
 function escapeAttr(str) {
@@ -1037,7 +1238,7 @@ function escapeAttr(str) {
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
 function closeModalOuter(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal('course-modal'); closeModal('req-modal'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal('course-modal'); closeModal('req-modal'); closeModal('student-modal'); } });
 
 initAdmin();
 </script>

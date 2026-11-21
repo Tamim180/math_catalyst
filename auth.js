@@ -17,9 +17,14 @@ loginPanel.querySelector('.btn').addEventListener('click', async () => {
   const email = loginPanel.querySelector('input[type=email]').value.trim();
   const password = loginPanel.querySelector('input[type=password]').value;
   if (!email || !password) return showMsg(loginPanel, 'Enter your email and password.');
-  const { error } = await sb.auth.signInWithPassword({ email, password });
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
   if (error) return showMsg(loginPanel, error.message);
-  location.href = 'courses.html';
+  const { data: prof } = await sb.from('profiles').select('banned').eq('id', data.user.id).maybeSingle();
+  if (prof && prof.banned) {
+    await sb.auth.signOut();
+    return showMsg(loginPanel, 'This account has been suspended. Please contact your teacher.');
+  }
+  location.href = 'home.html';
 });
 
 /* ── REGISTER ── */
@@ -43,8 +48,13 @@ regPanel.querySelector('.btn').addEventListener('click', async () => {
 
   if (data.session) {
     await sb.from('profiles').update({ school, class_level: cls }).eq('id', data.user.id);
-    location.href = 'courses.html';
+    location.href = 'home.html';
   } else {
     showMsg(regPanel, 'Account created. Check your email to confirm, then sign in.');
   }
 });
+
+/* sent back here because the account is suspended */
+if (new URLSearchParams(location.search).get('banned')) {
+  showMsg(loginPanel, 'This account has been suspended. Please contact your teacher.');
+}
