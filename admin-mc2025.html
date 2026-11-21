@@ -406,7 +406,10 @@ tr:last-child td{border-bottom:0} tr:hover td{background:rgba(34,211,238,.03)}
     <div class="modal-body" id="student-modal-body" style="max-height:65vh;overflow-y:auto"></div>
     <div class="modal-foot" style="justify-content:space-between">
       <button class="btn-cancel" onclick="closeModal('student-modal')">Close</button>
-      <button class="btn-reject" id="stu-ban-btn">Ban student</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" id="stu-reset-btn">Reset password</button>
+        <button class="btn-reject" id="stu-ban-btn">Ban student</button>
+      </div>
     </div>
   </div>
 </div>
@@ -820,6 +823,7 @@ async function openStudent(id) {
   banBtn.textContent = st.banned ? 'Unban student' : 'Ban student';
   banBtn.className = st.banned ? 'btn-approve' : 'btn-reject';
   banBtn.onclick = () => toggleBan(id);
+  document.getElementById('stu-reset-btn').onclick = () => resetStudentPassword(id);
   openModal('student-modal');
 
   const { data: wp, error } = await sb.from('watch_progress')
@@ -911,6 +915,29 @@ async function revokeEnrollment(enrId) {
   if (error) { alert('Could not cancel: ' + error.message); return; }
   await refresh();
   if (activeStudentId) openStudent(activeStudentId);
+}
+
+/* ── RESET A STUDENT'S PASSWORD (no email needed) ── */
+function randomPassword() {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const a = new Uint32Array(10);
+  crypto.getRandomValues(a);
+  return Array.from(a, n => chars[n % chars.length]).join('');
+}
+
+async function resetStudentPassword(id) {
+  const st = students.find(x => x.id === id);
+  if (!st) return;
+  const pw = prompt(
+    `Set a temporary password for ${st.name} (at least 8 characters).\n` +
+    `Send it to the student; they can change it later in Profile → Settings.`,
+    randomPassword()
+  );
+  if (pw === null) return;
+  if (pw.length < 8) { alert('Password must be at least 8 characters.'); return; }
+  const { error } = await sb.rpc('admin_reset_password', { target: id, new_password: pw });
+  if (error) { alert('Could not reset: ' + error.message); return; }
+  alert(`Done. ${st.name}'s new password is:\n\n${pw}\n\nSend it to them now. They have been signed out everywhere.`);
 }
 
 async function toggleBan(id) {
